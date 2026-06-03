@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leevin-CXHome-Hub</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0d1117;
+    --surface:  #161b22;
+    --surface2: #21262d;
+    --border:   #30363d;
+    --text:     #e6edf3;
+    --muted:    #7d8590;
+    --accent:   #7c6af7;
+    --accent2:  #9b8ff9;
+    --green:    #3fb950;
+    --blue:     #58a6ff;
+    --orange:   #f0883e;
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+  }
+
+  /* ── Animated background ── */
+  #bg-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.72;
+  }
+
+  header, main, footer { position: relative; z-index: 1; }
+
+  /* ── Header ── */
+  header {
+    background: rgba(22,27,34,0.88);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 62px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 10;
+  }
+
+  .header-brand { display: flex; align-items: center; gap: 12px; }
+
+  .header-icon {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, var(--accent), var(--blue));
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.05rem;
+    box-shadow: 0 0 16px rgba(124,106,247,0.4);
+  }
+
+  .header-brand span { font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; }
+  .header-brand small { font-size: 0.7rem; color: var(--muted); display: block; margin-top: -1px; }
+  .header-time { font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  /* ── Main layout ── */
+  main {
+    flex: 1;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 52px 24px 80px;
+    gap: 52px;
+  }
+
+  /* ── Section headers ── */
+  .section-wrap { width: 100%; max-width: 1080px; }
+
+  .section-header {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .section-header h2 {
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.09em;
+    text-transform: uppercase; color: var(--muted); white-space: nowrap;
+  }
+
+  .section-header::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* ── Dashboard cards ── */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 340px));
+    gap: 18px; justify-content: center;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 26px 24px;
+    display: flex; flex-direction: column; gap: 10px;
+    transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+    position: relative; overflow: hidden;
+  }
+
+  .card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--blue));
+    opacity: 0; transition: opacity 0.2s;
+  }
+
+  .card.active { cursor: pointer; }
+  .card.active:hover {
+    border-color: var(--accent);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(124,106,247,0.15);
+  }
+  .card.active:hover::before { opacity: 1; }
+  .card.coming-soon { opacity: 0.5; }
+
+  .card-icon {
+    width: 46px; height: 46px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.35rem; margin-bottom: 2px;
+  }
+  .card.active .card-icon    { background: rgba(124,106,247,0.15); }
+  .card.coming-soon .card-icon { background: var(--surface2); }
+
+  .card-title { font-size: 1.05rem; font-weight: 700; }
+  .card-desc  { color: var(--muted); font-size: 0.83rem; line-height: 1.65; flex: 1; }
+
+  .card-meta {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.72rem; color: var(--muted);
+  }
+
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+  .dot.off { background: var(--border); }
+
+  .card-badge {
+    display: inline-block;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--muted); font-size: 0.68rem; font-weight: 600;
+    padding: 3px 8px; border-radius: 20px;
+    letter-spacing: 0.04em; text-transform: uppercase; width: fit-content;
+  }
+
+  .card-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--accent); color: #fff; border: none;
+    padding: 9px 16px; border-radius: 8px;
+    font-size: 0.82rem; font-weight: 600; cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s, transform 0.1s;
+    margin-top: 6px; width: fit-content;
+  }
+  .card-link:hover { background: var(--accent2); transform: translateY(-1px); }
+
+  /* ── Quick links ── */
+  .link-groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+  }
+
+  .link-group {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+
+  .link-group-title {
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em;
+    text-transform: uppercase; color: var(--accent2);
+    margin-bottom: 12px; display: flex; align-items: center; gap: 7px;
+  }
+
+  .link-list { display: flex; flex-direction: column; gap: 5px; }
+
+  .quick-link {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 8px;
+    color: var(--text); text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+    border: 1px solid transparent;
+  }
+  .quick-link:hover {
+    background: var(--surface2); border-color: var(--border); color: var(--accent2);
+  }
+
+  .ql-icon {
+    width: 30px; height: 30px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.95rem; flex-shrink: 0; background: var(--surface2);
+  }
+
+  .ql-text { flex: 1; }
+  .ql-text strong { display: block; font-size: 0.82rem; font-weight: 600; }
+  .ql-text small  { font-size: 0.7rem; color: var(--muted); }
+  .ql-arrow { font-size: 0.72rem; color: var(--muted); }
+
+  /* ── Templates ── */
+  .collapsible-btn {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 12px;
+    padding: 15px 20px; cursor: pointer;
+    font-size: 0.85rem; font-weight: 600; color: var(--text);
+    transition: border-color 0.15s, background 0.15s;
+    user-select: none;
+  }
+  .collapsible-btn:hover { border-color: var(--accent); background: var(--surface2); }
+  .collapsible-btn .btn-left { display: flex; align-items: center; gap: 10px; }
+
+  .chevron { transition: transform 0.25s; color: var(--muted); }
+  .chevron.open { transform: rotate(180deg); }
+
+  .collapsible-body {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border); border-top: none;
+    border-radius: 0 0 12px 12px;
+    padding: 6px 20px 22px;
+  }
+  .collapsible-body.open { display: block; }
+
+  .template-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 10px; margin-top: 16px;
+  }
+
+  .tpl-link {
+    display: flex; align-items: center; gap: 10px;
+    padding: 13px 14px; border-radius: 10px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); text-decoration: none; font-size: 0.82rem; font-weight: 500;
+    transition: border-color 0.15s, transform 0.1s, box-shadow 0.15s;
+  }
+  .tpl-link:hover {
+    border-color: var(--accent); transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(124,106,247,0.12); color: var(--accent2);
+  }
+  .tpl-icon  { font-size: 1.1rem; }
+  .tpl-label { flex: 1; }
+  .tpl-arrow { font-size: 0.7rem; color: var(--muted); }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center; padding: 18px;
+    color: var(--muted); font-size: 0.73rem;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 640px) {
+    header { padding: 0 16px; }
+    main { padding: 36px 14px 60px; gap: 40px; }
+    .cards, .link-groups { grid-template-columns: 1fr; }
+    .template-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<!-- ── Header ── -->
+<header>
+  <div class="header-brand">
+    <div class="header-icon">🏠</div>
+    <div>
+      <span>Leevin-CXHome-Hub</span>
+      <small>Operations Centre</small>
+    </div>
+  </div>
+  <div class="header-time" id="clock"></div>
+</header>
+
+<main>
+
+  <!-- ── Dashboards ── -->
+  <div class="section-wrap">
+    <div class="section-header"><h2>Operations Dashboards</h2></div>
+    <div class="cards">
+
+      <div class="card active" onclick="window.open('https://gstruk.github.io/fixflo-leevinhome-dashboard/','_blank')">
+        <div class="card-icon">🔧</div>
+        <div class="card-title">Facilities</div>
+        <div class="card-desc">Maintenance tickets, appliance repairs, team assignments and SLA tracking across all managed properties.</div>
+        <div class="card-meta"><span class="dot"></span> Live on GitHub Pages</div>
+        <a class="card-link" href="https://gstruk.github.io/fixflo-leevinhome-dashboard/" target="_blank" onclick="event.stopPropagation()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Open Dashboard
+        </a>
+      </div>
+
+      <div class="card coming-soon">
+        <div class="card-icon">👥</div>
+        <div class="card-title">CX Team</div>
+        <div class="card-desc">Customer experience metrics, response times, satisfaction scores and team performance across all channels.</div>
+        <div class="card-meta"><span class="dot off"></span> Not yet available</div>
+        <span class="card-badge">Coming Soon</span>
+      </div>
+
+      <div class="card coming-soon">
+        <div class="card-icon">🏢</div>
+        <div class="card-title">Property Management</div>
+        <div class="card-desc">Portfolio overview, occupancy rates, lease tracking and property health across all managed units.</div>
+        <div class="card-meta"><span class="dot off"></span> Not yet available</div>
+        <span class="card-badge">Coming Soon</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Quick Access ── -->
+  <div class="section-wrap">
+    <div class="section-header"><h2>Quick Access</h2></div>
+    <div class="link-groups">
+
+      <!-- Support & CX -->
+      <div class="link-group">
+        <div class="link-group-title"><span>🎧</span> Support &amp; CX</div>
+        <div class="link-list">
+          <a class="quick-link" href="https://leevingroup.myfreshworks.com/org/login?response_type=code&redirect_uri=https://leevinirelandteam.freshdesk.com/freshid/authorize_callback?hd%3Dhttps://leevinirelandteam.freshdesk.com&hd=leevinirelandteam.freshdesk.com&prompt=consent&client_id=451980218021503405" target="_blank">
+            <div class="ql-icon">🟢</div>
+            <div class="ql-text"><strong>Freshdesk</strong><small>Support tickets &amp; CX</small></div>
+            <span class="ql-arrow">↗</span>
+          </a>
+          <a class="quick-link" href="https://leevin.app.doormate.io/login" target="_blank">
+            <div class="ql-icon">🚪</div>
+            <div class="ql-text"><strong>Doormate</strong><small>Access &amp; key management</small></div>
+            <span class="ql-arrow">↗</span>
+          </a>
+          <a class="quick-link" href="https://accounts.zoho.eu/signin?servicename=ZohoBookings&signupurl=https://www.zoho.com/bookings/signup.html" target="_blank">
+            <div class="ql-icon">📅</div>
+            <div class="ql-text"><strong>Zoho Bookings</strong><small>Schedule &amp; appointments</small></div>
+            <span class="ql-arrow">↗</span>
+          </a>
+          <a class="quick-link" href="https://accounts.zoho.eu/signin?servicename=ZohoSign&signupurl=https://www.zoho.com/sign/signup.html" target="_blank">
+            <div class="ql-icon">✍️</div>
+            <div class="ql-text"><strong>Zoho Sign</strong><small>Documents &amp; e-signatures</small></div>
+            <span class="ql-arrow">↗</span>
+          </a>
+          <a class="quick-link" href="https://dailynotify.base44.app/Messages" target="_blank">
+            <div class="ql-icon">💬</div>
+            <div class="ql-text"><strong>SMS Notification</strong><small>Daily notify messages</small></div>
+            <span class="ql-arrow">↗</span>
+          </a>
+          <a class="quick-link" href="https://docs.google.com/forms/d/e/1FAIpQLScw7WoiDs0tJiNOkfxQpHknJYaJ7anz2ewneJ5ZtMlUxEjUlw/viewform" target="_blank">
+            <div class="ql-icon">🔒</div>
+            <div class="ql-text"><strong>Confidential Report</strong><small>Customer confidential form</small></div>
+            <span class="ql-arrow">↗</span>
+          </a>
+          <a class="quick-link" href="https://leevinhome-convivencia.netlify.app/" target="_blank">
+            <div class="ql-icon">🤝</div>
+            <div class="ql-text"><strong>Conflict Resolution</strong><small>Resident conflict support</small></div>
+            <span class="ql-arrow">↗</span>
+          </a>
+          <a class="quick-link" href="https://docs.google.com/document/d/120w2lNnb3wxK3Fig_MPDamEArZKxn6qEVh7xrXTM3wI/edit?tab=t.0#heading=h.uhlifpgeps4a" target="_blank">
+            <div class="ql-icon">📖</div>
+            <div class="ql-text"><strong>Doormate Guide</strong><small>Leevin Home reference</small></div>
+            <span class="ql-arrow">↗</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Property & Maintenance -->
+      <div class="link-group">
+        <div class="link-group-title"><span>🏠</span> Property &amp; Maintenance</div>
+        <div class="link-list">
+          <a class="quick-link" href="https://leevin.fixflo.com/Auth/Login?ForceLogout=true" target="_blank">
+            <div class="ql-icon">🔧</div>
+            <div class="ql-text"><strong>FixFlo</strong><small>Maintenance &amp; repairs</small></div>
+            <span class="ql-arrow">↗</span>
+          </a>
+          <a class="quick-link" href="https://app.inventoryhive.co.uk/dashboard/login.html" target="_blank">
+            <div class="ql-icon">📋</div>
+            <div class="ql-text"><strong>Inventory Hive</strong><small>Property inspections</small></div>
+            <span class="ql-arrow">↗</span>
+          </a>
+          <a class="quick-link" href="https://app.beemyroom.com/" target="_blank">
+            <div class="ql-icon">🐝</div>
+            <div class="ql-text"><strong>BeeMyRoom</strong><small>Room management</small></div>
+            <span class="ql-arrow">↗</span>
+          </a>
+          <a class="quick-link" href="https://docs.google.com/spreadsheets/d/13yAN-3EmXNQWN-_sIVt39sb3Dh6vkxkvP42KKwN4WYY/edit?gid=0#gid=0" target="_blank">
+            <div class="ql-icon">🔑</div>
+            <div class="ql-text"><strong>Return Property</strong><small>Key &amp; return tracking</small></div>
+            <span class="ql-arrow">↗</span>
+          </a>
+          <a class="quick-link" href="https://docs.google.com/spreadsheets/d/16eQSXMFQLTfgV3K6aNINVw1AuyJcVFXlt9FEdR4i1gQ/edit?gid=930562869#gid=930562869" target="_blank">
+            <div class="ql-icon">✅</div>
+            <div class="ql-text"><strong>Self-inspection Check-in</strong><small>Check-in responses</small></div>
+            <span class="ql-arrow">↗</span>
+          </a>
+          <a class="quick-link" href="https://inspecto-route-leevinhome.lovable.app/request#" target="_blank">
+            <div class="ql-icon">🔍</div>
+            <div class="ql-text"><strong>Property Inspection Request</strong><small>Submit inspection requests</small></div>
+            <span class="ql-arrow">↗</span>
+          </a>
+          <a class="quick-link" href="https://inspecto-route-leevinhome.lovable.app/login" target="_blank">
+            <div class="ql-icon">📊</div>
+            <div class="ql-text"><strong>Property Inspection Dashboard</strong><small>Inspection management &amp; overview</small></div>
+            <span class="ql-arrow">↗</span>
+          </a>
+          <a class="quick-link" href="https://docs.google.com/forms/d/e/1FAIpQLSduQ3j1C_28fLeNsS-3p1OWfOZoqiYuHytea2ESi1UNH61SdQ/viewform" target="_blank">
+            <div class="ql-icon">🚪</div>
+            <div class="ql-text"><strong>Self Check-out Inspection</strong><small>Check-out inspection form</small></div>
+            <span class="ql-arrow">↗</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Operations & Admin -->
+      <div class="link-group">
+        <div class="link-group-title"><span>📊</span> Operations &amp; Admin</div>
+        <div class="link-list">
+          <a class="quick-link" href="https://docs.google.com/spreadsheets/d/1rKAEWQlM0z-IEJp0stYt6bBgp3jp9hRiR604hv6na18/edit?gid=1996193922#gid=1996193922" target="_blank">
+            <div class="ql-icon">🏨</div>
+            <div class="ql-text"><strong>Reception</strong><small>Check-out / Payments / Appts</small></div>
+            <span class="ql-arrow">↗</span>
+          </a>
+          <a class="quick-link" href="https://docs.google.com/spreadsheets/d/19708bIIavxeQRSEWKSEYppMFRv6VTRYKZbIMxqomBGU/edit?gid=20247323#gid=20247323" target="_blank">
+            <div class="ql-icon">💰</div>
+            <div class="ql-text"><strong>Bills Control</strong><small>Finance &amp; billing tracker</small></div>
+            <span class="ql-arrow">↗</span>
+          </a>
+          <a class="quick-link" href="https://leevinit.freshservice.com/support/login" target="_blank">
+            <div class="ql-icon">🖥️</div>
+            <div class="ql-text"><strong>Leevin IT Support</strong><small>Internal IT helpdesk</small></div>
+            <span class="ql-arrow">↗</span>
+          </a>
+          <a class="quick-link" href="https://script.google.com/a/macros/leevinhome.com/s/AKfycbyjQZcVrpw1iaRMrupOybNujfiJpKv7UpuJq7I_XHLe_rzWHspFfCK_4CpNXjKyteMYJQ/exec" target="_blank">
+            <div class="ql-icon">📋</div>
+            <div class="ql-text"><strong>Reception Log</strong><small>Leevin reception activity log</small></div>
+            <span class="ql-arrow">↗</span>
+          </a>
+          <a class="quick-link" href="https://docs.google.com/spreadsheets/d/1Z_WXZmPMperrIaNZC05f2BHSNmIgbfiWgWBNItNogjw/edit?gid=1738620916#gid=1738620916" target="_blank">
+            <div class="ql-icon">⏳</div>
+            <div class="ql-text"><strong>Collection Pendencias</strong><small>Pending collections tracker</small></div>
+            <span class="ql-arrow">↗</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Customer Forms -->
+      <div class="link-group">
+        <div class="link-group-title"><span>📝</span> Customer Forms</div>
+        <div class="link-list">
+          <a class="quick-link" href="https://docs.google.com/forms/d/e/1FAIpQLSfHLLqy5aqsBpkmdiOruHpaxJyDm1Y-QJqXq_AWTHtxxKOwVQ/viewform" target="_blank">
+            <div class="ql-icon">🏙️</div>
+            <div class="ql-text"><strong>Replacement Form</strong><small>Dublin</small></div>
+            <span class="ql-arrow">↗</span>
+          </a>
+          <a class="quick-link" href="https://docs.google.com/forms/d/e/1FAIpQLSeavxQLMW6fZWDPVMNQJSgN6oJRY3rbXgDZ327EPQzOTRXI-g/viewform" target="_blank">
+            <div class="ql-icon">🏙️</div>
+            <div class="ql-text"><strong>Replacement Form</strong><small>Cork</small></div>
+            <span class="ql-arrow">↗</span>
+          </a>
+          <a class="quick-link" href="https://docs.google.com/forms/d/e/1FAIpQLSdKMN6pJ_Uwj4Ml8Of_2ApK0jmXukpWEUC6QEh7AHhIz1kGhA/viewform?pli=1" target="_blank">
+            <div class="ql-icon">🏙️</div>
+            <div class="ql-text"><strong>Replacement Form</strong><small>Limerick</small></div>
+            <span class="ql-arrow">↗</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- HR & People -->
+      <div class="link-group">
+        <div class="link-group-title"><span>👤</span> HR &amp; People</div>
+        <div class="link-list">
+          <a class="quick-link" href="https://leevin.bamboohr.com/login.php" target="_blank">
+            <div class="ql-icon">🌿</div>
+            <div class="ql-text"><strong>BambooHR</strong><small>HR management</small></div>
+            <span class="ql-arrow">↗</span>
+          </a>
+          <a class="quick-link" href="https://leevin.bamboohr.com/employees/orgchart.php" target="_blank">
+            <div class="ql-icon">🗂️</div>
+            <div class="ql-text"><strong>Organograma</strong><small>Leevin Group org chart</small></div>
+            <span class="ql-arrow">↗</span>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Daily Templates ── -->
+  <div class="section-wrap">
+    <div class="section-header"><h2>Daily Templates</h2></div>
+
+    <button class="collapsible-btn" id="tpl-toggle" onclick="toggleTemplates()">
+      <div class="btn-left">📄 &nbsp;Daily Templates</div>
+      <span class="chevron" id="chevron">▼</span>
+    </button>
+
+    <div class="collapsible-body" id="tpl-body">
+      <div class="template-grid">
+        <a class="tpl-link" href="#" target="_blank">
+          <span class="tpl-icon">🟢</span><span class="tpl-label">Check-in Template</span><span class="tpl-arrow">↗</span>
+        </a>
+        <a class="tpl-link" href="#" target="_blank">
+          <span class="tpl-icon">🔴</span><span class="tpl-label">Check-out Template</span><span class="tpl-arrow">↗</span>
+        </a>
+        <a class="tpl-link" href="#" target="_blank">
+          <span class="tpl-icon">🔧</span><span class="tpl-label">Maintenance Report</span><span class="tpl-arrow">↗</span>
+        </a>
+        <a class="tpl-link" href="#" target="_blank">
+          <span class="tpl-icon">🚨</span><span class="tpl-label">Escalation Template</span><span class="tpl-arrow">↗</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  Leevin Home &mdash; Internal Operations Hub &mdash; <span id="footer-year"></span>
+</footer>
+
+<script>
+  /* ── Clock ── */
+  function tick() {
+    const n = new Date();
+    document.getElementById('clock').textContent =
+      n.toLocaleDateString('en-IE', { weekday:'short', day:'numeric', month:'short' }) +
+      ' · ' +
+      n.toLocaleTimeString('en-IE', { hour:'2-digit', minute:'2-digit' });
+  }
+  tick(); setInterval(tick, 15000);
+  document.getElementById('footer-year').textContent = new Date().getFullYear() + ' · Leevin-CXHome-Hub';
+
+  /* ── Collapsible ── */
+  function toggleTemplates() {
+    const body    = document.getElementById('tpl-body');
+    const chevron = document.getElementById('chevron');
+    const btn     = document.getElementById('tpl-toggle');
+    const open    = body.classList.toggle('open');
+    chevron.classList.toggle('open', open);
+    btn.style.borderRadius = open ? '12px 12px 0 0' : '12px';
+  }
+
+  /* ── Network background ── */
+  (function () {
+    const cv  = document.getElementById('bg-canvas');
+    const ctx = cv.getContext('2d');
+    const N   = 70, DIST = 180, SPD = 0.3;
+    let W, H, nodes, t = 0;
+
+    // Node color palette: purple, blue, cyan, violet
+    const PALETTE = [
+      [124, 106, 247],  // purple
+      [ 88, 166, 255],  // blue
+      [ 56, 211, 203],  // cyan
+      [155, 143, 249],  // violet
+      [ 79, 172, 254],  // sky blue
+    ];
+
+    function resize() { W = cv.width = innerWidth; H = cv.height = innerHeight; }
+
+    function mkNode() {
+      const color = PALETTE[Math.floor(Math.random() * PALETTE.length)];
+      return {
+        x:  Math.random() * W,
+        y:  Math.random() * H,
+        vx: (Math.random() - .5) * SPD,
+        vy: (Math.random() - .5) * SPD,
+        r:  Math.random() * 2.5 + 1.2,
+        color,
+        phase: Math.random() * Math.PI * 2,  // for pulse
+      };
+    }
+
+    function frame() {
+      ctx.clearRect(0, 0, W, H);
+      t += 0.018;
+
+      // Draw lines
+      for (let i = 0; i < N; i++) {
+        for (let j = i + 1; j < N; j++) {
+          const dx = nodes[i].x - nodes[j].x;
+          const dy = nodes[i].y - nodes[j].y;
+          const d  = Math.sqrt(dx*dx + dy*dy);
+          if (d < DIST) {
+            const alpha = (1 - d / DIST) * 0.55;
+            // Blend color between the two node colors
+            const c1 = nodes[i].color, c2 = nodes[j].color;
+            const r  = (c1[0] + c2[0]) >> 1;
+            const g  = (c1[1] + c2[1]) >> 1;
+            const b  = (c1[2] + c2[2]) >> 1;
+            ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
+            ctx.lineWidth   = 0.9;
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Draw nodes with glow
+      for (const n of nodes) {
+        const pulse = 1 + 0.35 * Math.sin(t + n.phase);
+        const [r, g, b] = n.color;
+        const glowR = n.r * pulse * 4.5;
+
+        // Outer glow
+        const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, glowR);
+        grad.addColorStop(0,   `rgba(${r},${g},${b},0.55)`);
+        grad.addColorStop(0.4, `rgba(${r},${g},${b},0.18)`);
+        grad.addColorStop(1,   `rgba(${r},${g},${b},0)`);
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, glowR, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // Core dot
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r * pulse * 0.85, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${r},${g},${b},0.95)`;
+        ctx.shadowColor = `rgba(${r},${g},${b},0.9)`;
+        ctx.shadowBlur  = 10;
+        ctx.fill();
+        ctx.shadowBlur  = 0;
+
+        n.x += n.vx; n.y += n.vy;
+        if (n.x < 0 || n.x > W) n.vx *= -1;
+        if (n.y < 0 || n.y > H) n.vy *= -1;
+      }
+
+      requestAnimationFrame(frame);
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+    nodes = Array.from({ length: N }, mkNode);
+    frame();
+  })();
+</script>
+
+</body>
+</html>

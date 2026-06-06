@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CX Team Performance — Leevin Home</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0d1117;
+    --surface:  #161b22;
+    --surface2: #21262d;
+    --border:   #30363d;
+    --text:     #e6edf3;
+    --muted:    #7d8590;
+    --accent:   #7c6af7;
+    --accent2:  #9b8ff9;
+    --green:    #3fb950;
+    --blue:     #58a6ff;
+    --orange:   #f0883e;
+    --red:      #f85149;
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    overflow-x: hidden;
+  }
+
+  #bg-canvas {
+    position: fixed; inset: 0; z-index: 0;
+    pointer-events: none; opacity: 0.72;
+  }
+
+  header, main, footer { position: relative; z-index: 1; }
+
+  /* ── Header ── */
+  header {
+    background: rgba(22,27,34,0.88);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px; height: 62px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 10;
+  }
+
+  .header-brand { display: flex; align-items: center; gap: 12px; }
+
+  .header-icon {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, var(--accent), var(--blue));
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.05rem;
+    box-shadow: 0 0 16px rgba(124,106,247,0.4);
+  }
+
+  .header-brand span  { font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; }
+  .header-brand small { font-size: 0.7rem; color: var(--muted); display: block; margin-top: -1px; }
+  .header-time { font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--muted); font-size: 0.78rem; font-weight: 500;
+    text-decoration: none; padding: 6px 12px; border-radius: 7px;
+    border: 1px solid var(--border); background: transparent;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .back-btn:hover { color: var(--text); border-color: var(--accent); background: var(--surface2); }
+
+  /* ── Main ── */
+  main {
+    flex: 1; display: flex; flex-direction: column;
+    padding: 40px 28px 80px; gap: 32px;
+    width: 100%; box-sizing: border-box;
+  }
+
+  .page-title h1 { font-size: 1.45rem; font-weight: 800; letter-spacing: -0.02em; }
+  .page-title p  { color: var(--muted); font-size: 0.82rem; margin-top: 4px; }
+
+  /* ── Month tabs ── */
+  .month-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .month-tab {
+    padding: 7px 18px; border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--surface); color: var(--muted);
+    font-size: 0.8rem; font-weight: 600; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .month-tab:hover { border-color: var(--accent2); color: var(--text); }
+  .month-tab.active {
+    background: var(--accent); border-color: var(--accent);
+    color: #fff; box-shadow: 0 0 16px rgba(124,106,247,0.35);
+  }
+
+  /* ── Location filters ── */
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .filter-label { font-size: 0.72rem; color: var(--muted); margin-right: 4px; }
+
+  .filter-pill {
+    padding: 5px 14px; border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--surface2); color: var(--muted);
+    font-size: 0.75rem; font-weight: 600; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .filter-pill:hover { border-color: var(--blue); color: var(--text); }
+  .filter-pill.active {
+    background: rgba(88,166,255,0.15); border-color: var(--blue); color: var(--blue);
+  }
+
+  /* ── KPI grid ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+  }
+
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px 20px;
+  }
+
+  .kpi-label {
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+  }
+
+  .kpi-value {
+    font-size: 1.9rem; font-weight: 800; letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums; line-height: 1;
+  }
+
+  .kpi-card.kpi-created   .kpi-value { color: var(--blue); }
+  .kpi-card.kpi-resolved  .kpi-value { color: var(--green); }
+  .kpi-card.kpi-unresolved .kpi-value { color: var(--orange); }
+  .kpi-card.kpi-reopen    .kpi-value { color: var(--text); }
+  .kpi-sub { font-size: 0.72rem; color: var(--muted); margin-top: 5px; }
+
+  /* ── Table ── */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden;
+  }
+
+  .table-head-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+  }
+  .table-head-bar strong { font-size: 0.82rem; }
+  .table-head-bar span   { font-size: 0.72rem; color: var(--muted); }
+
+  .tbl-scroll { overflow-x: auto; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+
+  thead th {
+    padding: 11px 16px; text-align: left;
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap; cursor: pointer; user-select: none;
+    transition: color 0.15s;
+  }
+  thead th:hover { color: var(--text); }
+  thead th.sort-asc::after  { content: ' ↑'; color: var(--accent2); }
+  thead th.sort-desc::after { content: ' ↓'; color: var(--accent2); }
+
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.12s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+
+  td { padding: 11px 16px; vertical-align: middle; white-space: nowrap; }
+
+  .agent-name { font-weight: 600; font-size: 0.83rem; }
+
+  .loc-badge {
+    display: inline-block; padding: 2px 9px;
+    border-radius: 20px; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em;
+  }
+  .loc-brazil   { background: rgba(63,185,80,0.12);   color: #3fb950; border: 1px solid rgba(63,185,80,0.25); }
+  .loc-cork     { background: rgba(88,166,255,0.12);  color: #58a6ff; border: 1px solid rgba(88,166,255,0.25); }
+  .loc-dublin   { background: rgba(124,106,247,0.12); color: #9b8ff9; border: 1px solid rgba(124,106,247,0.25); }
+  .loc-limerick { background: rgba(240,136,62,0.12);  color: #f0883e; border: 1px solid rgba(240,136,62,0.25); }
+
+  .num { font-variant-numeric: tabular-nums; text-align: right; }
+
+  .pct-pill {
+    display: inline-block; padding: 2px 9px;
+    border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .pct-green  { background: rgba(63,185,80,0.12);  color: #3fb950; }
+  .pct-orange { background: rgba(240,136,62,0.12); color: #f0883e; }
+  .pct-red    { background: rgba(248,81,73,0.12);  color: #f85149; }
+
+  .unresolved-high { color: var(--orange); font-weight: 700; }
+  .unresolved-crit { color: var(--red);    font-weight: 700; }
+
+  .empty-row td { text-align: center; color: var(--muted); padding: 36px; font-style: italic; }
+
+  .totals-row td {
+    border-top: 2px solid var(--border);
+    font-weight: 700; color: var(--muted); font-size: 0.78rem;
+  }
+
+  .updated-label { font-size: 0.7rem; color: var(--muted); text-align: right; }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center; padding: 18px;
+    color: var(--muted); font-size: 0.73rem;
+    border-top: 1px solid var(--border);
+  }
+
+  @media (max-width: 640px) {
+    header { padding: 0 16px; }
+    main { padding: 28px 14px 60px; gap: 24px; }
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<header>
+  <div class="header-brand">
+    <div class="header-icon">🏠</div>
+    <div>
+      <span>Leevin-CXHome-Hub</span>
+      <small>CX Team Performance</small>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:16px;">
+    <a class="back-btn" href="https://gstruk.github.io/leevin-cxhome-hub/">← Hub</a>
+    <div class="header-time" id="clock"></div>
+  </div>
+</header>
+
+<main>
+
+  <div class="page-title">
+    <h1>👥 CX Team — Agent Performance</h1>
+    <p>Freshdesk ticket metrics per agent &middot; Year to date 2026</p>
+  </div>
+
+  <div id="month-tabs" class="month-tabs"></div>
+
+  <div class="filters">
+    <span class="filter-label">Location:</span>
+    <button class="filter-pill active" data-loc="all"      onclick="setLoc('all')">All</button>
+    <button class="filter-pill"        data-loc="Brazil"   onclick="setLoc('Brazil')">Brazil</button>
+    <button class="filter-pill"        data-loc="Cork"     onclick="setLoc('Cork')">Cork</button>
+    <button class="filter-pill"        data-loc="Dublin"   onclick="setLoc('Dublin')">Dublin</button>
+    <button class="filter-pill"        data-loc="Limerick" onclick="setLoc('Limerick')">Limerick</button>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card kpi-created">
+      <div class="kpi-label">Tickets Created</div>
+      <div class="kpi-value" id="kpi-created">—</div>
+      <div class="kpi-sub"  id="kpi-created-sub"></div>
+    </div>
+    <div class="kpi-card kpi-resolved">
+      <div class="kpi-label">Tickets Resolved</div>
+      <div class="kpi-value" id="kpi-resolved">—</div>
+      <div class="kpi-sub"  id="kpi-resolved-sub"></div>
+    </div>
+    <div class="kpi-card kpi-unresolved">
+      <div class="kpi-label">Unresolved</div>
+      <div class="kpi-value" id="kpi-unresolved">—</div>
+      <div class="kpi-sub"  id="kpi-unresolved-sub"></div>
+    </div>
+    <div class="kpi-card kpi-reopen">
+      <div class="kpi-label">Reopened Rate</div>
+      <div class="kpi-value" id="kpi-reopen">—</div>
+      <div class="kpi-sub"  id="kpi-reopen-sub"></div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <div class="table-head-bar">
+      <strong id="table-title">Agent Performance</strong>
+      <span id="table-count"></span>
+    </div>
+    <div class="tbl-scroll">
+      <table id="agent-table">
+        <thead>
+          <tr>
+            <th onclick="sortBy('name')">Agent</th>
+            <th onclick="sortBy('loc')">Location</th>
+            <th onclick="sortBy('created')"    class="num">Created</th>
+            <th onclick="sortBy('resolved')"   class="num">Resolved</th>
+            <th onclick="sortBy('unresolved')" class="num">Unresolved</th>
+            <th onclick="sortBy('reopened')"   class="num">Reopened</th>
+            <th onclick="sortBy('pct')"        class="num">Reop %</th>
+          </tr>
+        </thead>
+        <tbody id="agent-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="updated-label" id="updated-label"></div>
+
+</main>
+
+<footer>
+  Leevin Home &mdash; CX Team Performance &mdash; <span id="footer-year"></span>
+</footer>
+
+<script>
+/* DATA_START */
+const MONTHS_DATA = [
+  {
+    label: "May 2026", key: "May/2026",
+    agents: [
+      { name: "Bruna Jangada",                  loc: "Brazil",   unresolved: 0,  created: 126, resolved: 122, reopened: 6,   pct: 4.92  },
+      { name: "Caren Silva",                    loc: "Limerick", unresolved: 2,  created: 36,  resolved: 37,  reopened: 11,  pct: 29.73 },
+      { name: "Everton Moreira",                loc: "Cork",     unresolved: 14, created: 242, resolved: 245, reopened: 44,  pct: 17.96 },
+      { name: "Felipe Previato Costa",          loc: "Cork",     unresolved: 0,  created: 334, resolved: 395, reopened: 108, pct: 27.34 },
+      { name: "Fernando de Freitas Santos",     loc: "Brazil",   unresolved: 9,  created: 471, resolved: 519, reopened: 89,  pct: 17.15 },
+      { name: "Gilberto Struk",                 loc: "Dublin",   unresolved: 3,  created: 9,   resolved: 17,  reopened: 2,   pct: 11.76 },
+      { name: "Jessika Silva",                  loc: "Limerick", unresolved: 6,  created: 220, resolved: 234, reopened: 51,  pct: 21.79 },
+      { name: "Jonathan Augusto De Souza",      loc: "Dublin",   unresolved: 3,  created: 247, resolved: 255, reopened: 67,  pct: 26.27 },
+      { name: "Kassia Lima",                    loc: "Brazil",   unresolved: 7,  created: 375, resolved: 394, reopened: 150, pct: 38.07 },
+      { name: "Marcela Oliveira",               loc: "Dublin",   unresolved: 13, created: 157, resolved: 166, reopened: 35,  pct: 21.08 },
+      { name: "Matheus Ferreira de Almeida",    loc: "Cork",     unresolved: 48, created: 132, resolved: 109, reopened: 7,   pct: 6.42  },
+      { name: "Pamela Ferraz Peruchi",          loc: "Brazil",   unresolved: 4,  created: 116, resolved: 139, reopened: 57,  pct: 41.01 },
+      { name: "Paula Pereira Lima",             loc: "Brazil",   unresolved: 0,  created: 24,  resolved: 29,  reopened: 14,  pct: 48.28 },
+      { name: "Rafael Santos Menezes",          loc: "Brazil",   unresolved: 25, created: 161, resolved: 160, reopened: 60,  pct: 37.50 },
+      { name: "Renata Barbosa",                 loc: "Dublin",   unresolved: 2,  created: 160, resolved: 155, reopened: 22,  pct: 14.19 },
+      { name: "Sales Leevin Home",              loc: "Dublin",   unresolved: 36, created: 11,  resolved: 13,  reopened: 2,   pct: 15.38 },
+      { name: "Talita Santos",                  loc: "Dublin",   unresolved: 4,  created: 197, resolved: 212, reopened: 47,  pct: 22.17 },
+      { name: "Vhytorya Brun",                  loc: "Cork",     unresolved: 3,  created: 72,  resolved: 46,  reopened: 8,   pct: 17.39 }
+    ]
+  },
+  {
+    label: "Apr 2026", key: "April/2026",
+    agents: [
+      { name: "Bruna Jangada",                  loc: "Brazil",   unresolved: 0,  created: 146, resolved: 143, reopened: 9,   pct: 6.29  },
+      { name: "Caren Silva",                    loc: "Limerick", unresolved: 1,  created: 132, resolved: 141, reopened: 15,  pct: 10.64 },
+      { name: "Everton Moreira",                loc: "Cork",     unresolved: 4,  created: 362, resolved: 408, reopened: 86,  pct: 21.08 },
+      { name: "Felipe Previato Costa",          loc: "Cork",     unresolved: 4,  created: 356, resolved: 400, reopened: 95,  pct: 23.75 },
+      { name: "Fernando de Freitas Santos",     loc: "Brazil",   unresolved: 31, created: 645, resolved: 699, reopened: 149, pct: 21.32 },
+      { name: "Gilberto Struk",                 loc: "Dublin",   unresolved: 11, created: 136, resolved: 139, reopened: 10,  pct: 7.19  },
+      { name: "Jessika Silva",                  loc: "Limerick", unresolved: 3,  created: 209, resolved: 215, reopened: 43,  pct: 20.00 },
+      { name: "Jonathan Augusto De Souza",      loc: "Dublin",   unresolved: 0,  created: 221, resolved: 226, reopened: 34,  pct: 15.04 },
+      { name: "Kassia Lima",                    loc: "Brazil",   unresolved: 2,  created: 402, resolved: 427, reopened: 158, pct: 37.00 },
+      { name: "Marcela Oliveira",               loc: "Dublin",   unresolved: 14, created: 178, resolved: 189, reopened: 48,  pct: 25.40 },
+      { name: "Matheus Ferreira de Almeida",    loc: "Cork",     unresolved: 13, created: 76,  resolved: 83,  reopened: 5,   pct: 6.02  },
+      { name: "Pamela Ferraz Peruchi",          loc: "Brazil",   unresolved: 5,  created: 205, resolved: 230, reopened: 79,  pct: 34.35 },
+      { name: "Paula Pereira Lima",             loc: "Brazil",   unresolved: 0,  created: 64,  resolved: 68,  reopened: 12,  pct: 17.65 },
+      { name: "Rafael Santos Menezes",          loc: "Brazil",   unresolved: 2,  created: 176, resolved: 208, reopened: 85,  pct: 40.87 },
+      { name: "Renata Barbosa",                 loc: "Dublin",   unresolved: 1,  created: 130, resolved: 138, reopened: 26,  pct: 18.84 }
+    ]
+  },
+  {
+    label: "Mar 2026", key: "March/2026",
+    agents: [
+      { name: "Bruna Jangada",                  loc: "Brazil",   unresolved: 0,  created: 196, resolved: 182, reopened: 12,  pct: 6.59  },
+      { name: "Caren Silva",                    loc: "Limerick", unresolved: 3,  created: 24,  resolved: 23,  reopened: 0,   pct: 0.00  },
+      { name: "Everton Moreira",                loc: "Cork",     unresolved: 7,  created: 318, resolved: 340, reopened: 58,  pct: 17.06 },
+      { name: "Felipe Previato Costa",          loc: "Cork",     unresolved: 22, created: 469, resolved: 477, reopened: 112, pct: 23.48 },
+      { name: "Fernando de Freitas Santos",     loc: "Brazil",   unresolved: 12, created: 591, resolved: 647, reopened: 120, pct: 18.55 },
+      { name: "Gilberto Struk",                 loc: "Dublin",   unresolved: 5,  created: 24,  resolved: 21,  reopened: 0,   pct: 0.00  },
+      { name: "Jessika Silva",                  loc: "Limerick", unresolved: 12, created: 27,  resolved: 12,  reopened: 2,   pct: 16.67 },
+      { name: "Jonathan Augusto De Souza",      loc: "Dublin",   unresolved: 0,  created: 301, resolved: 322, reopened: 68,  pct: 21.12 },
+      { name: "Kassia Lima",                    loc: "Brazil",   unresolved: 2,  created: 415, resolved: 482, reopened: 201, pct: 41.70 },
+      { name: "Marcela Oliveira",               loc: "Dublin",   unresolved: 15, created: 205, resolved: 204, reopened: 60,  pct: 29.41 },
+      { name: "Matheus Ferreira de Almeida",    loc: "Cork",     unresolved: 22, created: 65,  resolved: 74,  reopened: 9,   pct: 12.16 },
+      { name: "Pamela Ferraz Peruchi",          loc: "Brazil",   unresolved: 2,  created: 248, resolved: 304, reopened: 83,  pct: 27.30 },
+      { name: "Paula Pereira Lima",             loc: "Brazil",   unresolved: 0,  created: 54,  resolved: 60,  reopened: 10,  pct: 16.67 },
+      { name: "Rafael Santos Menezes",          loc: "Brazil",   unresolved: 3,  created: 232, resolved: 262, reopened: 86,  pct: 32.82 },
+      { name: "Renata Barbosa",                 loc: "Dublin",   unresolved: 2,  created: 73,  resolved: 77,  reopened: 15,  pct: 19.48 }
+    ]
+  },
+  {
+    label: "Feb 2026", key: "February/2026",
+    agents: [
+      { name: "Bruna Jangada",                  loc: "Brazil",   unresolved: 0,  created: 95,  resolved: 94,  reopened: 18,  pct: 19.15 },
+      { name: "Carlos Tadeu Tavares Rodrigues", loc: "Brazil",   unresolved: 0,  created: 22,  resolved: 34,  reopened: 13,  pct: 38.24 },
+      { name: "Everton Moreira",                loc: "Cork",     unresolved: 4,  created: 87,  resolved: 82,  reopened: 6,   pct: 7.32  },
+      { name: "Felipe Previato Costa",          loc: "Cork",     unresolved: 5,  created: 451, resolved: 487, reopened: 121, pct: 24.85 },
+      { name: "Fernando de Freitas Santos",     loc: "Brazil",   unresolved: 7,  created: 429, resolved: 493, reopened: 115, pct: 23.33 },
+      { name: "Gilberto Struk",                 loc: "Dublin",   unresolved: 4,  created: 15,  resolved: 16,  reopened: 5,   pct: 31.25 },
+      { name: "Jonathan Augusto De Souza",      loc: "Dublin",   unresolved: 2,  created: 239, resolved: 248, reopened: 53,  pct: 21.37 },
+      { name: "Kassia Lima",                    loc: "Brazil",   unresolved: 7,  created: 428, resolved: 465, reopened: 197, pct: 42.37 },
+      { name: "Marcela Oliveira",               loc: "Dublin",   unresolved: 0,  created: 230, resolved: 247, reopened: 55,  pct: 22.27 },
+      { name: "Matheus Ferreira de Almeida",    loc: "Cork",     unresolved: 10, created: 44,  resolved: 52,  reopened: 0,   pct: 0.00  },
+      { name: "Pamela Ferraz Peruchi",          loc: "Brazil",   unresolved: 28, created: 326, resolved: 439, reopened: 99,  pct: 22.55 },
+      { name: "Rafael Santos Menezes",          loc: "Brazil",   unresolved: 9,  created: 201, resolved: 213, reopened: 74,  pct: 34.74 },
+      { name: "Renata Barbosa",                 loc: "Dublin",   unresolved: 0,  created: 83,  resolved: 96,  reopened: 23,  pct: 23.96 },
+      { name: "Sales Leevin Home",              loc: "Dublin",   unresolved: 18, created: 153, resolved: 165, reopened: 34,  pct: 20.61 },
+      { name: "Talita Santos",                  loc: "Dublin",   unresolved: 2,  created: 128, resolved: 149, reopened: 51,  pct: 34.23 }
+    ]
+  },
+  {
+    label: "Jan 2026", key: "January/2026",
+    agents: [
+      { name: "Bruna Jangada",                  loc: "Brazil",   unresolved: 1,   created: 118, resolved: 112, reopened: 21,  pct: 18.75 },
+      { name: "Carlos Tadeu Tavares Rodrigues", loc: "Brazil",   unresolved: 8,   created: 119, resolved: 129, reopened: 45,  pct: 34.88 },
+      { name: "Felipe Previato Costa",          loc: "Cork",     unresolved: 6,   created: 461, resolved: 487, reopened: 121, pct: 24.85 },
+      { name: "Fernando de Freitas Santos",     loc: "Brazil",   unresolved: 13,  created: 376, resolved: 437, reopened: 109, pct: 24.94 },
+      { name: "Gilberto Struk",                 loc: "Dublin",   unresolved: 5,   created: 24,  resolved: 35,  reopened: 6,   pct: 17.14 },
+      { name: "Jonathan Augusto De Souza",      loc: "Dublin",   unresolved: 0,   created: 225, resolved: 230, reopened: 39,  pct: 16.96 },
+      { name: "Kassia Lima",                    loc: "Brazil",   unresolved: 7,   created: 381, resolved: 391, reopened: 152, pct: 38.87 },
+      { name: "Lanna Domingues Barbosa",        loc: "Cork",     unresolved: 0,   created: 108, resolved: 142, reopened: 35,  pct: 24.65 },
+      { name: "Marcela Oliveira",               loc: "Dublin",   unresolved: 3,   created: 169, resolved: 171, reopened: 57,  pct: 33.33 },
+      { name: "Matheus Ferreira de Almeida",    loc: "Cork",     unresolved: 14,  created: 31,  resolved: 35,  reopened: 3,   pct: 8.57  },
+      { name: "Pamela Ferraz Peruchi",          loc: "Brazil",   unresolved: 110, created: 288, resolved: 236, reopened: 58,  pct: 24.58 },
+      { name: "Rafael Santos Menezes",          loc: "Brazil",   unresolved: 2,   created: 72,  resolved: 90,  reopened: 34,  pct: 37.78 },
+      { name: "Renata Barbosa",                 loc: "Dublin",   unresolved: 1,   created: 148, resolved: 157, reopened: 29,  pct: 18.47 },
+      { name: "Sales Leevin Home",              loc: "Dublin",   unresolved: 14,  created: 148, resolved: 139, reopened: 32,  pct: 23.02 },
+      { name: "Talita Santos",                  loc: "Dublin",   unresolved: 1,   created: 186, resolved: 192, reopened: 60,  pct: 31.25 }
+    ]
+  }
+];
+const DATA_UPDATED = "2026-06-06";
+/* DATA_END */
+
+let currentMonth = 0;
+let currentLoc   = 'all';
+let sortKey      = 'created';
+let sortDir      = 'desc';
+
+function filtered(idx) {
+  const agents = MONTHS_DATA[idx].agents;
+  return currentLoc === 'all' ? agents : agents.filter(a => a.loc === currentLoc);
+}
+
+function computeKPIs(agents) {
+  let created = 0, resolved = 0, unresolved = 0, reopened = 0;
+  for (const a of agents) { created += a.created; resolved += a.resolved; unresolved += a.unresolved; reopened += a.reopened; }
+  return { created, resolved, unresolved, reopened, pct: resolved > 0 ? reopened / resolved * 100 : 0 };
+}
+
+function pctClass(p) { return p < 20 ? 'pct-green' : p < 30 ? 'pct-orange' : 'pct-red'; }
+
+function locClass(loc) {
+  const m = { Brazil: 'loc-brazil', Cork: 'loc-cork', Dublin: 'loc-dublin', Limerick: 'loc-limerick' };
+  return m[loc] || '';
+}
+
+function renderTabs() {
+  document.getElementById('month-tabs').innerHTML = MONTHS_DATA.map((m, i) =>
+    `<button class="month-tab${i === currentMonth ? ' active' : ''}" onclick="setMonth(${i})">${m.label}</button>`
+  ).join('');
+}
+
+function renderKPIs(agents) {
+  const k = computeKPIs(agents);
+  document.getElementById('kpi-created').textContent     = k.created.toLocaleString();
+  document.getElementById('kpi-resolved').textContent    = k.resolved.toLocaleString();
+  document.getElementById('kpi-unresolved').textContent  = k.unresolved.toLocaleString();
+  document.getElementById('kpi-reopen').textContent      = k.pct.toFixed(1) + '%';
+  const loc = currentLoc === 'all' ? 'All locations' : 'CX Home ' + currentLoc;
+  document.getElementById('kpi-created-sub').textContent    = loc;
+  document.getElementById('kpi-resolved-sub').textContent   = loc;
+  document.getElementById('kpi-unresolved-sub').textContent = loc;
+  document.getElementById('kpi-reopen-sub').textContent     = `${k.reopened.toLocaleString()} reopened / ${k.resolved.toLocaleString()} resolved`;
+}
+
+function renderTable(agents) {
+  const colMap = { name: 0, loc: 1, created: 2, resolved: 3, unresolved: 4, reopened: 5, pct: 6 };
+  document.querySelectorAll('thead th').forEach(th => th.classList.remove('sort-asc', 'sort-desc'));
+  const th = document.querySelectorAll('thead th')[colMap[sortKey]];
+  if (th) th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+
+  const sorted = [...agents].sort((a, b) => {
+    let va = a[sortKey], vb = b[sortKey];
+    if (typeof va === 'string') { va = va.toLowerCase(); vb = vb.toLowerCase(); }
+    if (va < vb) return sortDir === 'asc' ? -1 : 1;
+    if (va > vb) return sortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const tbody = document.getElementById('agent-tbody');
+  if (!sorted.length) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="7">No agents for this selection.</td></tr>`;
+    document.getElementById('table-count').textContent = '0 agents';
+    return;
+  }
+
+  const tot = computeKPIs(sorted);
+  tbody.innerHTML = sorted.map(a => {
+    const uc = a.unresolved >= 20 ? 'unresolved-crit' : a.unresolved >= 10 ? 'unresolved-high' : '';
+    return `<tr>
+      <td class="agent-name">${a.name}</td>
+      <td><span class="loc-badge ${locClass(a.loc)}">${a.loc}</span></td>
+      <td class="num">${a.created.toLocaleString()}</td>
+      <td class="num">${a.resolved.toLocaleString()}</td>
+      <td class="num ${uc}">${a.unresolved}</td>
+      <td class="num">${a.reopened}</td>
+      <td class="num"><span class="pct-pill ${pctClass(a.pct)}">${a.pct.toFixed(1)}%</span></td>
+    </tr>`;
+  }).join('') + `<tr class="totals-row">
+    <td colspan="2">Total &mdash; ${sorted.length} agent${sorted.length !== 1 ? 's' : ''}</td>
+    <td class="num">${tot.created.toLocaleString()}</td>
+    <td class="num">${tot.resolved.toLocaleString()}</td>
+    <td class="num">${tot.unresolved.toLocaleString()}</td>
+    <td class="num">${tot.reopened.toLocaleString()}</td>
+    <td class="num"><span class="pct-pill ${pctClass(tot.pct)}">${tot.pct.toFixed(1)}%</span></td>
+  </tr>`;
+  document.getElementById('table-count').textContent = `${sorted.length} agent${sorted.length !== 1 ? 's' : ''}`;
+}
+
+function render() {
+  const agents = filtered(currentMonth);
+  document.getElementById('table-title').textContent = `Agent Performance — ${MONTHS_DATA[currentMonth].label}`;
+  renderKPIs(agents);
+  renderTable(agents);
+  document.getElementById('updated-label').textContent = `Data updated: ${DATA_UPDATED}`;
+}
+
+function setMonth(i) { currentMonth = i; renderTabs(); render(); }
+
+function setLoc(loc) {
+  currentLoc = loc;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.toggle('active', p.dataset.loc === loc));
+  render();
+}
+
+function sortBy(key) {
+  if (sortKey === key) { sortDir = sortDir === 'asc' ? 'desc' : 'asc'; }
+  else { sortKey = key; sortDir = (key === 'name' || key === 'loc') ? 'asc' : 'desc'; }
+  renderTable(filtered(currentMonth));
+}
+
+/* ── Clock ── */
+function tick() {
+  const n = new Date();
+  document.getElementById('clock').textContent =
+    n.toLocaleDateString('en-IE', { weekday:'short', day:'numeric', month:'short' }) + ' · ' +
+    n.toLocaleTimeString('en-IE', { hour:'2-digit', minute:'2-digit' });
+}
+tick(); setInterval(tick, 15000);
+document.getElementById('footer-year').textContent = new Date().getFullYear() + ' · Leevin-CXHome-Hub';
+
+renderTabs();
+render();
+
+/* ── Network background ── */
+(function () {
+  const cv = document.getElementById('bg-canvas'), ctx = cv.getContext('2d');
+  const N = 70, DIST = 180, SPD = 0.3;
+  let W, H, nodes, t = 0;
+  const PALETTE = [[124,106,247],[88,166,255],[56,211,203],[155,143,249],[79,172,254]];
+  function resize() { W = cv.width = innerWidth; H = cv.height = innerHeight; }
+  function mkNode() {
+    const color = PALETTE[Math.floor(Math.random() * PALETTE.length)];
+    return { x: Math.random()*W, y: Math.random()*H, vx:(Math.random()-.5)*SPD, vy:(Math.random()-.5)*SPD, r:Math.random()*2.5+1.2, color, phase:Math.random()*Math.PI*2 };
+  }
+  function frame() {
+    ctx.clearRect(0,0,W,H); t+=0.018;
+    for (let i=0;i<N;i++) for (let j=i+1;j<N;j++) {
+      const dx=nodes[i].x-nodes[j].x, dy=nodes[i].y-nodes[j].y, d=Math.sqrt(dx*dx+dy*dy);
+      if (d<DIST) {
+        const a=(1-d/DIST)*0.55, c1=nodes[i].color, c2=nodes[j].color;
+        ctx.strokeStyle=`rgba(${(c1[0]+c2[0])>>1},${(c1[1]+c2[1])>>1},${(c1[2]+c2[2])>>1},${a})`;
+        ctx.lineWidth=0.9; ctx.beginPath(); ctx.moveTo(nodes[i].x,nodes[i].y); ctx.lineTo(nodes[j].x,nodes[j].y); ctx.stroke();
+      }
+    }
+    for (const n of nodes) {
+      const pulse=1+0.35*Math.sin(t+n.phase), [r,g,b]=n.color, gR=n.r*pulse*4.5;
+      const grad=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,gR);
+      grad.addColorStop(0,`rgba(${r},${g},${b},0.55)`); grad.addColorStop(0.4,`rgba(${r},${g},${b},0.18)`); grad.addColorStop(1,`rgba(${r},${g},${b},0)`);
+      ctx.beginPath(); ctx.arc(n.x,n.y,gR,0,Math.PI*2); ctx.fillStyle=grad; ctx.fill();
+      ctx.beginPath(); ctx.arc(n.x,n.y,n.r*pulse*0.85,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${r},${g},${b},0.95)`; ctx.shadowColor=`rgba(${r},${g},${b},0.9)`; ctx.shadowBlur=10; ctx.fill(); ctx.shadowBlur=0;
+      n.x+=n.vx; n.y+=n.vy;
+      if(n.x<0||n.x>W) n.vx*=-1; if(n.y<0||n.y>H) n.vy*=-1;
+    }
+    requestAnimationFrame(frame);
+  }
+  window.addEventListener('resize', resize); resize();
+  nodes = Array.from({length:N}, mkNode); frame();
+})();
+</script>
+
+</body>
+</html>

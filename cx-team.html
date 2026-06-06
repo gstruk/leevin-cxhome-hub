@@ -60,6 +60,7 @@ main{flex:1;display:flex;flex-direction:column;padding:32px 28px 80px;gap:28px;w
 .kpi-card.kpi-resrate .kpi-value{color:var(--teal);}
 .kpi-card.kpi-unresolved .kpi-value{color:var(--orange);}
 .kpi-card.kpi-reopen .kpi-value{color:var(--text);}
+.kpi-card.kpi-rpd .kpi-value{color:#e3c349;}
 .kpi-sub{font-size:0.72rem;color:var(--muted);margin-top:5px;}
 
 /* Charts */
@@ -95,6 +96,7 @@ td{padding:10px 14px;vertical-align:middle;white-space:nowrap;}
 .pct-orange{background:rgba(240,136,62,0.12);color:#f0883e;}
 .pct-red{background:rgba(248,81,73,0.12);color:#f85149;}
 .teal-pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:0.75rem;font-weight:700;font-variant-numeric:tabular-nums;background:rgba(57,208,208,0.12);color:#39d0d0;}
+.rpd-pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:0.75rem;font-weight:700;font-variant-numeric:tabular-nums;background:rgba(227,195,73,0.12);color:#e3c349;}
 .unresolved-high{color:var(--orange);font-weight:700;}
 .unresolved-crit{color:var(--red);font-weight:700;}
 .delta-up{color:#f85149;font-size:0.7rem;font-weight:700;}
@@ -181,6 +183,11 @@ footer{text-align:center;padding:18px;color:var(--muted);font-size:0.73rem;borde
       <div class="kpi-value" id="kpi-reopen">—</div>
       <div class="kpi-sub"  id="kpi-reopen-sub"></div>
     </div>
+    <div class="kpi-card kpi-rpd">
+      <div class="kpi-label">Resolved / Day</div>
+      <div class="kpi-value" id="kpi-rpd">—</div>
+      <div class="kpi-sub"  id="kpi-rpd-sub"></div>
+    </div>
   </div>
 
   <div class="charts-grid">
@@ -218,7 +225,8 @@ footer{text-align:center;padding:18px;color:var(--muted);font-size:0.73rem;borde
             <th onclick="sortBy('resRate')"    class="num">Res Rate</th>
             <th onclick="sortBy('unresolved')" class="num">Unresolved</th>
             <th onclick="sortBy('reopened')"   class="num">Reopened</th>
-            <th onclick="sortBy('pct')"        class="num">Reop %</th>
+            <th onclick="sortBy('pct')"            class="num">Reop %</th>
+            <th onclick="sortBy('resolvedPerDay')" class="num">Res/Day</th>
           </tr>
         </thead>
         <tbody id="agent-tbody"></tbody>
@@ -356,6 +364,20 @@ const LOC_COLORS = { Brazil:'#3fb950', Cork:'#58a6ff', Dublin:'#9b8ff9', Limeric
 function pctClass(p) { return p < 20 ? 'pct-green' : p < 30 ? 'pct-orange' : 'pct-red'; }
 function locClass(l) { return {Brazil:'loc-brazil',Cork:'loc-cork',Dublin:'loc-dublin',Limerick:'loc-limerick'}[l]||''; }
 
+function workingDaysInMonth(key) {
+  const MNAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const [mName, yr] = key.split('/');
+  const mi = MNAMES.indexOf(mName); if (mi === -1) return 22;
+  const y = parseInt(yr);
+  let count = 0;
+  const last = new Date(y, mi + 1, 0).getDate();
+  for (let d = 1; d <= last; d++) {
+    const dow = new Date(y, mi, d).getDay();
+    if (dow !== 0 && dow !== 6) count++;
+  }
+  return count;
+}
+
 function getSelectedMonthIndices() {
   const idx = [];
   for (let i = toMonthIdx; i <= fromMonthIdx; i++) idx.push(i);
@@ -366,13 +388,15 @@ function aggregateAgents(monthIndices) {
   const map = new Map();
   const newestIdx = Math.min(...monthIndices);
   for (const idx of monthIndices) {
+    const wdays = workingDaysInMonth(MONTHS_DATA[idx].key);
     for (const a of MONTHS_DATA[idx].agents) {
       if (selectedLocs.size > 0 && !selectedLocs.has(a.loc)) continue;
       if (searchText && !a.name.toLowerCase().includes(searchText)) continue;
       const key = a.name + '|' + a.loc;
-      if (!map.has(key)) map.set(key, { name: a.name, loc: a.loc, created: 0, resolved: 0, unresolved: 0, reopened: 0, _nu: null });
+      if (!map.has(key)) map.set(key, { name: a.name, loc: a.loc, created: 0, resolved: 0, unresolved: 0, reopened: 0, workDays: 0, _nu: null });
       const e = map.get(key);
       e.created += a.created; e.resolved += a.resolved; e.reopened += a.reopened;
+      e.workDays += wdays;
       if (idx === newestIdx) e._nu = a.unresolved;
     }
   }
@@ -381,6 +405,7 @@ function aggregateAgents(monthIndices) {
     e.unresolved = e._nu !== null ? e._nu : 0;
     e.pct = e.resolved > 0 ? e.reopened / e.resolved * 100 : 0;
     e.resRate = e.created > 0 ? e.resolved / e.created * 100 : 0;
+    e.resolvedPerDay = e.workDays > 0 ? e.resolved / e.workDays : 0;
     delete e._nu;
     if (e.created >= volumeThreshold) result.push(e);
   }
@@ -395,9 +420,10 @@ function getMoMDelta(name, loc, currIdx) {
 }
 
 function computeKPIs(agents) {
-  let c=0,r=0,u=0,ro=0;
-  for(const a of agents){c+=a.created;r+=a.resolved;u+=a.unresolved;ro+=a.reopened;}
-  return {created:c,resolved:r,unresolved:u,reopened:ro,pct:r>0?ro/r*100:0,resRate:c>0?r/c*100:0};
+  let c=0,r=0,u=0,ro=0,wd=0;
+  for(const a of agents){c+=a.created;r+=a.resolved;u+=a.unresolved;ro+=a.reopened;wd+=a.workDays||0;}
+  return {created:c,resolved:r,unresolved:u,reopened:ro,workDays:wd,
+    pct:r>0?ro/r*100:0,resRate:c>0?r/c*100:0,resolvedPerDay:wd>0?r/wd:0};
 }
 
 // ── Render KPIs ──
@@ -414,19 +440,21 @@ function renderKPIs(agents, monthIndices) {
   document.getElementById('kpi-resrate').textContent    = k.resRate.toFixed(1) + '%';
   document.getElementById('kpi-unresolved').textContent = k.unresolved.toLocaleString();
   document.getElementById('kpi-reopen').textContent     = k.pct.toFixed(1) + '%';
+  document.getElementById('kpi-rpd').textContent        = k.resolvedPerDay.toFixed(1);
 
   document.getElementById('kpi-created-sub').textContent    = rangeLabel + ' · ' + locNote;
   document.getElementById('kpi-resolved-sub').textContent   = rangeLabel + ' · ' + locNote;
   document.getElementById('kpi-resrate-sub').textContent    = k.resolved.toLocaleString() + ' / ' + k.created.toLocaleString();
   document.getElementById('kpi-unresolved-sub').textContent = 'Snapshot: ' + newestLabel;
   document.getElementById('kpi-reopen-sub').textContent     = k.reopened.toLocaleString() + ' reopened / ' + k.resolved.toLocaleString() + ' resolved';
+  document.getElementById('kpi-rpd-sub').textContent        = 'Team total · ' + k.workDays + ' working days';
 }
 
 // ── Render Table ──
 function renderTable(agents, monthIndices) {
   const isSingle = monthIndices.length === 1;
   const singleIdx = isSingle ? monthIndices[0] : null;
-  const colKeys = ['name','loc','created','resolved','resRate','unresolved','reopened','pct'];
+  const colKeys = ['name','loc','created','resolved','resRate','unresolved','reopened','pct','resolvedPerDay'];
   document.querySelectorAll('thead th').forEach((th, i) => {
     th.classList.remove('sort-asc','sort-desc');
     if (colKeys[i] === sortKey) th.classList.add(sortDir==='asc'?'sort-asc':'sort-desc');
@@ -443,7 +471,7 @@ function renderTable(agents, monthIndices) {
 
   const tbody = document.getElementById('agent-tbody');
   if (!sorted.length) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="8">No agents match this selection.</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="9">No agents match this selection.</td></tr>`;
     document.getElementById('table-count').textContent = '0 agents';
     return;
   }
@@ -464,6 +492,7 @@ function renderTable(agents, monthIndices) {
       <td class="num ${uc}">${a.unresolved}</td>
       <td class="num">${a.reopened}</td>
       <td class="num"><span class="pct-pill ${pctClass(a.pct)}">${a.pct.toFixed(1)}%</span></td>
+      <td class="num"><span class="rpd-pill">${a.resolvedPerDay.toFixed(1)}</span></td>
     </tr>`;
   }).join('') + `<tr class="totals-row">
     <td colspan="2">Total — ${sorted.length} agent${sorted.length!==1?'s':''}</td>
@@ -473,6 +502,7 @@ function renderTable(agents, monthIndices) {
     <td class="num">${tot.unresolved.toLocaleString()}</td>
     <td class="num">${tot.reopened.toLocaleString()}</td>
     <td class="num"><span class="pct-pill ${pctClass(tot.pct)}">${tot.pct.toFixed(1)}%</span></td>
+    <td class="num"><span class="rpd-pill">${tot.resolvedPerDay.toFixed(1)}</span></td>
   </tr>`;
   document.getElementById('table-count').textContent = sorted.length + ' agent' + (sorted.length!==1?'s':'');
 }

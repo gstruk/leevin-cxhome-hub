@@ -4,242 +4,119 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CX Team Performance — Leevin Home</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#0d1117; --surface:#161b22; --surface2:#21262d; --border:#30363d;
+  --text:#e6edf3; --muted:#7d8590; --accent:#7c6af7; --accent2:#9b8ff9;
+  --green:#3fb950; --blue:#58a6ff; --orange:#f0883e; --red:#f85149; --teal:#39d0d0;
+}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden;}
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.72;}
+header,main,footer{position:relative;z-index:1;}
 
-  :root {
-    --bg:       #0d1117;
-    --surface:  #161b22;
-    --surface2: #21262d;
-    --border:   #30363d;
-    --text:     #e6edf3;
-    --muted:    #7d8590;
-    --accent:   #7c6af7;
-    --accent2:  #9b8ff9;
-    --green:    #3fb950;
-    --blue:     #58a6ff;
-    --orange:   #f0883e;
-    --red:      #f85149;
-  }
+header{background:rgba(22,27,34,0.88);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 32px;height:62px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
+.header-brand{display:flex;align-items:center;gap:12px;}
+.header-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),var(--blue));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.05rem;box-shadow:0 0 16px rgba(124,106,247,0.4);}
+.header-brand span{font-size:1rem;font-weight:700;letter-spacing:-0.01em;}
+.header-brand small{font-size:0.7rem;color:var(--muted);display:block;margin-top:-1px;}
+.header-time{font-size:0.78rem;color:var(--muted);font-variant-numeric:tabular-nums;}
+.back-btn{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:0.78rem;font-weight:500;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:transparent;transition:color .15s,border-color .15s,background .15s;}
+.back-btn:hover{color:var(--text);border-color:var(--accent);background:var(--surface2);}
 
-  html, body { height: 100%; }
+main{flex:1;display:flex;flex-direction:column;padding:32px 28px 80px;gap:28px;width:100%;box-sizing:border-box;}
+.page-title h1{font-size:1.45rem;font-weight:800;letter-spacing:-0.02em;}
+.page-title p{color:var(--muted);font-size:0.82rem;margin-top:4px;}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    min-height: 100vh;
-    display: flex; flex-direction: column;
-    overflow-x: hidden;
-  }
+/* Filter Panel */
+.filter-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:14px;}
+.filter-row{display:flex;align-items:center;flex-wrap:wrap;gap:10px;}
+.f-label{font-size:0.69rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);white-space:nowrap;}
+.search-input{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.82rem;padding:7px 12px;border-radius:8px;width:200px;outline:none;transition:border-color .15s;}
+.search-input:focus{border-color:var(--accent);}
+.search-input::placeholder{color:var(--muted);}
+.month-select{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.8rem;padding:7px 10px;border-radius:8px;cursor:pointer;outline:none;transition:border-color .15s;}
+.month-select:focus{border-color:var(--accent);}
+.range-sep{color:var(--muted);font-size:0.9rem;}
+.filter-pill{padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:0.75rem;font-weight:600;cursor:pointer;transition:all .15s;user-select:none;}
+.filter-pill:hover{border-color:var(--blue);color:var(--text);}
+.filter-pill.active{background:rgba(88,166,255,0.15);border-color:var(--blue);color:var(--blue);}
+.filter-pill.all-pill.active{background:rgba(124,106,247,0.15);border-color:var(--accent);color:var(--accent2);}
+.threshold-group{display:flex;align-items:center;gap:8px;flex:1;min-width:200px;}
+.threshold-slider{flex:1;max-width:160px;accent-color:var(--accent);cursor:pointer;}
+.threshold-val{font-size:0.78rem;font-variant-numeric:tabular-nums;color:var(--text);min-width:72px;}
+.reset-btn{padding:5px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.75rem;cursor:pointer;transition:all .15s;margin-left:auto;}
+.reset-btn:hover{border-color:var(--red);color:var(--red);}
 
-  #bg-canvas {
-    position: fixed; inset: 0; z-index: 0;
-    pointer-events: none; opacity: 0.72;
-  }
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:14px;}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;}
+.kpi-label{font-size:0.68rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.kpi-value{font-size:1.85rem;font-weight:800;letter-spacing:-0.03em;font-variant-numeric:tabular-nums;line-height:1;}
+.kpi-card.kpi-created .kpi-value{color:var(--blue);}
+.kpi-card.kpi-resolved .kpi-value{color:var(--green);}
+.kpi-card.kpi-resrate .kpi-value{color:var(--teal);}
+.kpi-card.kpi-unresolved .kpi-value{color:var(--orange);}
+.kpi-card.kpi-reopen .kpi-value{color:var(--text);}
+.kpi-sub{font-size:0.72rem;color:var(--muted);margin-top:5px;}
 
-  header, main, footer { position: relative; z-index: 1; }
+/* Charts */
+.charts-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px 20px;}
+.chart-title{font-size:0.72rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.chart-container{position:relative;height:220px;}
 
-  /* ── Header ── */
-  header {
-    background: rgba(22,27,34,0.88);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border);
-    padding: 0 32px; height: 62px;
-    display: flex; align-items: center; justify-content: space-between;
-    position: sticky; top: 0; z-index: 10;
-  }
+/* Table */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.table-head-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);}
+.table-head-bar strong{font-size:0.82rem;}
+.table-head-bar span{font-size:0.72rem;color:var(--muted);}
+.tbl-scroll{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+thead th{padding:11px 14px;text-align:left;font-size:0.68rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;transition:color .15s;}
+thead th:hover{color:var(--text);}
+thead th.sort-asc::after{content:' ↑';color:var(--accent2);}
+thead th.sort-desc::after{content:' ↓';color:var(--accent2);}
+tbody tr{border-bottom:1px solid var(--border);transition:background .12s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:var(--surface2);}
+td{padding:10px 14px;vertical-align:middle;white-space:nowrap;}
+.agent-name{font-weight:600;font-size:0.83rem;}
+.loc-badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:0.68rem;font-weight:700;letter-spacing:0.04em;}
+.loc-brazil{background:rgba(63,185,80,0.12);color:#3fb950;border:1px solid rgba(63,185,80,0.25);}
+.loc-cork{background:rgba(88,166,255,0.12);color:#58a6ff;border:1px solid rgba(88,166,255,0.25);}
+.loc-dublin{background:rgba(124,106,247,0.12);color:#9b8ff9;border:1px solid rgba(124,106,247,0.25);}
+.loc-limerick{background:rgba(240,136,62,0.12);color:#f0883e;border:1px solid rgba(240,136,62,0.25);}
+.num{font-variant-numeric:tabular-nums;text-align:right;}
+.pct-pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:0.75rem;font-weight:700;font-variant-numeric:tabular-nums;}
+.pct-green{background:rgba(63,185,80,0.12);color:#3fb950;}
+.pct-orange{background:rgba(240,136,62,0.12);color:#f0883e;}
+.pct-red{background:rgba(248,81,73,0.12);color:#f85149;}
+.teal-pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:0.75rem;font-weight:700;font-variant-numeric:tabular-nums;background:rgba(57,208,208,0.12);color:#39d0d0;}
+.unresolved-high{color:var(--orange);font-weight:700;}
+.unresolved-crit{color:var(--red);font-weight:700;}
+.delta-up{color:#f85149;font-size:0.7rem;font-weight:700;}
+.delta-down{color:#3fb950;font-size:0.7rem;font-weight:700;}
+.delta-flat{color:var(--muted);font-size:0.7rem;}
+.empty-row td{text-align:center;color:var(--muted);padding:36px;font-style:italic;}
+.totals-row td{border-top:2px solid var(--border);font-weight:700;color:var(--muted);font-size:0.78rem;}
+.updated-label{font-size:0.7rem;color:var(--muted);text-align:right;}
 
-  .header-brand { display: flex; align-items: center; gap: 12px; }
+footer{text-align:center;padding:18px;color:var(--muted);font-size:0.73rem;border-top:1px solid var(--border);}
 
-  .header-icon {
-    width: 34px; height: 34px;
-    background: linear-gradient(135deg, var(--accent), var(--blue));
-    border-radius: 9px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.05rem;
-    box-shadow: 0 0 16px rgba(124,106,247,0.4);
-  }
-
-  .header-brand span  { font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; }
-  .header-brand small { font-size: 0.7rem; color: var(--muted); display: block; margin-top: -1px; }
-  .header-time { font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
-
-  .back-btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    color: var(--muted); font-size: 0.78rem; font-weight: 500;
-    text-decoration: none; padding: 6px 12px; border-radius: 7px;
-    border: 1px solid var(--border); background: transparent;
-    transition: color 0.15s, border-color 0.15s, background 0.15s;
-  }
-  .back-btn:hover { color: var(--text); border-color: var(--accent); background: var(--surface2); }
-
-  /* ── Main ── */
-  main {
-    flex: 1; display: flex; flex-direction: column;
-    padding: 40px 28px 80px; gap: 32px;
-    width: 100%; box-sizing: border-box;
-  }
-
-  .page-title h1 { font-size: 1.45rem; font-weight: 800; letter-spacing: -0.02em; }
-  .page-title p  { color: var(--muted); font-size: 0.82rem; margin-top: 4px; }
-
-  /* ── Month tabs ── */
-  .month-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
-
-  .month-tab {
-    padding: 7px 18px; border-radius: 20px;
-    border: 1px solid var(--border);
-    background: var(--surface); color: var(--muted);
-    font-size: 0.8rem; font-weight: 600; cursor: pointer;
-    transition: all 0.15s;
-  }
-  .month-tab:hover { border-color: var(--accent2); color: var(--text); }
-  .month-tab.active {
-    background: var(--accent); border-color: var(--accent);
-    color: #fff; box-shadow: 0 0 16px rgba(124,106,247,0.35);
-  }
-
-  /* ── Location filters ── */
-  .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .filter-label { font-size: 0.72rem; color: var(--muted); margin-right: 4px; }
-
-  .filter-pill {
-    padding: 5px 14px; border-radius: 20px;
-    border: 1px solid var(--border);
-    background: var(--surface2); color: var(--muted);
-    font-size: 0.75rem; font-weight: 600; cursor: pointer;
-    transition: all 0.15s;
-  }
-  .filter-pill:hover { border-color: var(--blue); color: var(--text); }
-  .filter-pill.active {
-    background: rgba(88,166,255,0.15); border-color: var(--blue); color: var(--blue);
-  }
-
-  /* ── KPI grid ── */
-  .kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 14px;
-  }
-
-  .kpi-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px; padding: 18px 20px;
-  }
-
-  .kpi-label {
-    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em;
-    text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
-  }
-
-  .kpi-value {
-    font-size: 1.9rem; font-weight: 800; letter-spacing: -0.03em;
-    font-variant-numeric: tabular-nums; line-height: 1;
-  }
-
-  .kpi-card.kpi-created   .kpi-value { color: var(--blue); }
-  .kpi-card.kpi-resolved  .kpi-value { color: var(--green); }
-  .kpi-card.kpi-unresolved .kpi-value { color: var(--orange); }
-  .kpi-card.kpi-reopen    .kpi-value { color: var(--text); }
-  .kpi-sub { font-size: 0.72rem; color: var(--muted); margin-top: 5px; }
-
-  /* ── Table ── */
-  .table-wrap {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px; overflow: hidden;
-  }
-
-  .table-head-bar {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 20px; border-bottom: 1px solid var(--border);
-  }
-  .table-head-bar strong { font-size: 0.82rem; }
-  .table-head-bar span   { font-size: 0.72rem; color: var(--muted); }
-
-  .tbl-scroll { overflow-x: auto; }
-
-  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-
-  thead th {
-    padding: 11px 16px; text-align: left;
-    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em;
-    text-transform: uppercase; color: var(--muted);
-    border-bottom: 1px solid var(--border);
-    white-space: nowrap; cursor: pointer; user-select: none;
-    transition: color 0.15s;
-  }
-  thead th:hover { color: var(--text); }
-  thead th.sort-asc::after  { content: ' ↑'; color: var(--accent2); }
-  thead th.sort-desc::after { content: ' ↓'; color: var(--accent2); }
-
-  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.12s; }
-  tbody tr:last-child { border-bottom: none; }
-  tbody tr:hover { background: var(--surface2); }
-
-  td { padding: 11px 16px; vertical-align: middle; white-space: nowrap; }
-
-  .agent-name { font-weight: 600; font-size: 0.83rem; }
-
-  .loc-badge {
-    display: inline-block; padding: 2px 9px;
-    border-radius: 20px; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em;
-  }
-  .loc-brazil   { background: rgba(63,185,80,0.12);   color: #3fb950; border: 1px solid rgba(63,185,80,0.25); }
-  .loc-cork     { background: rgba(88,166,255,0.12);  color: #58a6ff; border: 1px solid rgba(88,166,255,0.25); }
-  .loc-dublin   { background: rgba(124,106,247,0.12); color: #9b8ff9; border: 1px solid rgba(124,106,247,0.25); }
-  .loc-limerick { background: rgba(240,136,62,0.12);  color: #f0883e; border: 1px solid rgba(240,136,62,0.25); }
-
-  .num { font-variant-numeric: tabular-nums; text-align: right; }
-
-  .pct-pill {
-    display: inline-block; padding: 2px 9px;
-    border-radius: 20px; font-size: 0.75rem; font-weight: 700;
-    font-variant-numeric: tabular-nums;
-  }
-  .pct-green  { background: rgba(63,185,80,0.12);  color: #3fb950; }
-  .pct-orange { background: rgba(240,136,62,0.12); color: #f0883e; }
-  .pct-red    { background: rgba(248,81,73,0.12);  color: #f85149; }
-
-  .unresolved-high { color: var(--orange); font-weight: 700; }
-  .unresolved-crit { color: var(--red);    font-weight: 700; }
-
-  .empty-row td { text-align: center; color: var(--muted); padding: 36px; font-style: italic; }
-
-  .totals-row td {
-    border-top: 2px solid var(--border);
-    font-weight: 700; color: var(--muted); font-size: 0.78rem;
-  }
-
-  .updated-label { font-size: 0.7rem; color: var(--muted); text-align: right; }
-
-  /* ── Footer ── */
-  footer {
-    text-align: center; padding: 18px;
-    color: var(--muted); font-size: 0.73rem;
-    border-top: 1px solid var(--border);
-  }
-
-  @media (max-width: 640px) {
-    header { padding: 0 16px; }
-    main { padding: 28px 14px 60px; gap: 24px; }
-    .kpi-grid { grid-template-columns: 1fr 1fr; }
-  }
+@media(max-width:900px){.charts-grid{grid-template-columns:1fr;}}
+@media(max-width:640px){header{padding:0 16px;}main{padding:24px 14px 60px;gap:20px;}.kpi-grid{grid-template-columns:1fr 1fr;}.search-input{width:140px;}}
 </style>
 </head>
 <body>
-
 <canvas id="bg-canvas"></canvas>
 
 <header>
   <div class="header-brand">
     <div class="header-icon">🏠</div>
-    <div>
-      <span>Leevin-CXHome-Hub</span>
-      <small>CX Team Performance</small>
-    </div>
+    <div><span>Leevin-CXHome-Hub</span><small>CX Team Performance</small></div>
   </div>
   <div style="display:flex;align-items:center;gap:16px;">
     <a class="back-btn" href="https://gstruk.github.io/leevin-cxhome-hub/">← Hub</a>
@@ -248,21 +125,34 @@
 </header>
 
 <main>
-
   <div class="page-title">
     <h1>👥 CX Team — Agent Performance</h1>
-    <p>Freshdesk ticket metrics per agent &middot; Year to date 2026</p>
+    <p>Freshdesk ticket metrics per agent · Year to date 2026</p>
   </div>
 
-  <div id="month-tabs" class="month-tabs"></div>
-
-  <div class="filters">
-    <span class="filter-label">Location:</span>
-    <button class="filter-pill active" data-loc="all"      onclick="setLoc('all')">All</button>
-    <button class="filter-pill"        data-loc="Brazil"   onclick="setLoc('Brazil')">Brazil</button>
-    <button class="filter-pill"        data-loc="Cork"     onclick="setLoc('Cork')">Cork</button>
-    <button class="filter-pill"        data-loc="Dublin"   onclick="setLoc('Dublin')">Dublin</button>
-    <button class="filter-pill"        data-loc="Limerick" onclick="setLoc('Limerick')">Limerick</button>
+  <div class="filter-panel">
+    <div class="filter-row">
+      <span class="f-label">Search</span>
+      <input class="search-input" id="search-input" type="text" placeholder="Agent name…" oninput="onSearch(this.value)">
+      <span class="f-label" style="margin-left:8px;">From</span>
+      <select class="month-select" id="from-select" onchange="onMonthRange()"></select>
+      <span class="range-sep">→</span>
+      <select class="month-select" id="to-select" onchange="onMonthRange()"></select>
+      <button class="reset-btn" onclick="resetFilters()">↺ Reset</button>
+    </div>
+    <div class="filter-row">
+      <span class="f-label">Location</span>
+      <button class="filter-pill all-pill active" id="loc-all" onclick="toggleLoc('all')">All</button>
+      <button class="filter-pill" data-loc="Brazil"   onclick="toggleLoc('Brazil')">Brazil</button>
+      <button class="filter-pill" data-loc="Cork"     onclick="toggleLoc('Cork')">Cork</button>
+      <button class="filter-pill" data-loc="Dublin"   onclick="toggleLoc('Dublin')">Dublin</button>
+      <button class="filter-pill" data-loc="Limerick" onclick="toggleLoc('Limerick')">Limerick</button>
+      <div class="threshold-group">
+        <span class="f-label">Min tickets</span>
+        <input class="threshold-slider" id="threshold-slider" type="range" min="0" max="200" step="5" value="0" oninput="onThreshold(this.value)">
+        <span class="threshold-val" id="threshold-val">All</span>
+      </div>
+    </div>
   </div>
 
   <div class="kpi-grid">
@@ -276,6 +166,11 @@
       <div class="kpi-value" id="kpi-resolved">—</div>
       <div class="kpi-sub"  id="kpi-resolved-sub"></div>
     </div>
+    <div class="kpi-card kpi-resrate">
+      <div class="kpi-label">Resolution Rate</div>
+      <div class="kpi-value" id="kpi-resrate">—</div>
+      <div class="kpi-sub"  id="kpi-resrate-sub"></div>
+    </div>
     <div class="kpi-card kpi-unresolved">
       <div class="kpi-label">Unresolved</div>
       <div class="kpi-value" id="kpi-unresolved">—</div>
@@ -288,19 +183,39 @@
     </div>
   </div>
 
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Volume Trend — Created &amp; Resolved</div>
+      <div class="chart-container"><canvas id="chart-trend"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Top Agents by Volume</div>
+      <div class="chart-container"><canvas id="chart-top"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Tickets by Location &amp; Month</div>
+      <div class="chart-container"><canvas id="chart-loc"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Volume vs Reopened % — Coaching Radar</div>
+      <div class="chart-container"><canvas id="chart-scatter"></canvas></div>
+    </div>
+  </div>
+
   <div class="table-wrap">
     <div class="table-head-bar">
       <strong id="table-title">Agent Performance</strong>
       <span id="table-count"></span>
     </div>
     <div class="tbl-scroll">
-      <table id="agent-table">
+      <table>
         <thead>
           <tr>
             <th onclick="sortBy('name')">Agent</th>
             <th onclick="sortBy('loc')">Location</th>
             <th onclick="sortBy('created')"    class="num">Created</th>
             <th onclick="sortBy('resolved')"   class="num">Resolved</th>
+            <th onclick="sortBy('resRate')"    class="num">Res Rate</th>
             <th onclick="sortBy('unresolved')" class="num">Unresolved</th>
             <th onclick="sortBy('reopened')"   class="num">Reopened</th>
             <th onclick="sortBy('pct')"        class="num">Reop %</th>
@@ -312,12 +227,9 @@
   </div>
 
   <div class="updated-label" id="updated-label"></div>
-
 </main>
 
-<footer>
-  Leevin Home &mdash; CX Team Performance &mdash; <span id="footer-year"></span>
-</footer>
+<footer>Leevin Home &mdash; CX Team Performance &mdash; <span id="footer-year"></span></footer>
 
 <script>
 /* DATA_START */
@@ -429,164 +341,357 @@ const MONTHS_DATA = [
 const DATA_UPDATED = "2026-06-06";
 /* DATA_END */
 
-let currentMonth = 0;
-let currentLoc   = 'all';
-let sortKey      = 'created';
-let sortDir      = 'desc';
+// ── State ──
+let fromMonthIdx = MONTHS_DATA.length - 1;
+let toMonthIdx   = 0;
+let selectedLocs = new Set();
+let searchText   = '';
+let volumeThreshold = 0;
+let sortKey = 'created';
+let sortDir = 'desc';
 
-function filtered(idx) {
-  const agents = MONTHS_DATA[idx].agents;
-  return currentLoc === 'all' ? agents : agents.filter(a => a.loc === currentLoc);
+const LOCS = ['Brazil','Cork','Dublin','Limerick'];
+const LOC_COLORS = { Brazil:'#3fb950', Cork:'#58a6ff', Dublin:'#9b8ff9', Limerick:'#f0883e' };
+
+function pctClass(p) { return p < 20 ? 'pct-green' : p < 30 ? 'pct-orange' : 'pct-red'; }
+function locClass(l) { return {Brazil:'loc-brazil',Cork:'loc-cork',Dublin:'loc-dublin',Limerick:'loc-limerick'}[l]||''; }
+
+function getSelectedMonthIndices() {
+  const idx = [];
+  for (let i = toMonthIdx; i <= fromMonthIdx; i++) idx.push(i);
+  return idx;
+}
+
+function aggregateAgents(monthIndices) {
+  const map = new Map();
+  const newestIdx = Math.min(...monthIndices);
+  for (const idx of monthIndices) {
+    for (const a of MONTHS_DATA[idx].agents) {
+      if (selectedLocs.size > 0 && !selectedLocs.has(a.loc)) continue;
+      if (searchText && !a.name.toLowerCase().includes(searchText)) continue;
+      const key = a.name + '|' + a.loc;
+      if (!map.has(key)) map.set(key, { name: a.name, loc: a.loc, created: 0, resolved: 0, unresolved: 0, reopened: 0, _nu: null });
+      const e = map.get(key);
+      e.created += a.created; e.resolved += a.resolved; e.reopened += a.reopened;
+      if (idx === newestIdx) e._nu = a.unresolved;
+    }
+  }
+  const result = [];
+  for (const [, e] of map) {
+    e.unresolved = e._nu !== null ? e._nu : 0;
+    e.pct = e.resolved > 0 ? e.reopened / e.resolved * 100 : 0;
+    e.resRate = e.created > 0 ? e.resolved / e.created * 100 : 0;
+    delete e._nu;
+    if (e.created >= volumeThreshold) result.push(e);
+  }
+  return result;
+}
+
+function getMoMDelta(name, loc, currIdx) {
+  if (currIdx >= MONTHS_DATA.length - 1) return null;
+  const prev = MONTHS_DATA[currIdx + 1].agents.find(a => a.name === name && a.loc === loc);
+  const curr = MONTHS_DATA[currIdx].agents.find(a => a.name === name && a.loc === loc);
+  return (prev && curr) ? curr.created - prev.created : null;
 }
 
 function computeKPIs(agents) {
-  let created = 0, resolved = 0, unresolved = 0, reopened = 0;
-  for (const a of agents) { created += a.created; resolved += a.resolved; unresolved += a.unresolved; reopened += a.reopened; }
-  return { created, resolved, unresolved, reopened, pct: resolved > 0 ? reopened / resolved * 100 : 0 };
+  let c=0,r=0,u=0,ro=0;
+  for(const a of agents){c+=a.created;r+=a.resolved;u+=a.unresolved;ro+=a.reopened;}
+  return {created:c,resolved:r,unresolved:u,reopened:ro,pct:r>0?ro/r*100:0,resRate:c>0?r/c*100:0};
 }
 
-function pctClass(p) { return p < 20 ? 'pct-green' : p < 30 ? 'pct-orange' : 'pct-red'; }
-
-function locClass(loc) {
-  const m = { Brazil: 'loc-brazil', Cork: 'loc-cork', Dublin: 'loc-dublin', Limerick: 'loc-limerick' };
-  return m[loc] || '';
-}
-
-function renderTabs() {
-  document.getElementById('month-tabs').innerHTML = MONTHS_DATA.map((m, i) =>
-    `<button class="month-tab${i === currentMonth ? ' active' : ''}" onclick="setMonth(${i})">${m.label}</button>`
-  ).join('');
-}
-
-function renderKPIs(agents) {
+// ── Render KPIs ──
+function renderKPIs(agents, monthIndices) {
   const k = computeKPIs(agents);
-  document.getElementById('kpi-created').textContent     = k.created.toLocaleString();
-  document.getElementById('kpi-resolved').textContent    = k.resolved.toLocaleString();
-  document.getElementById('kpi-unresolved').textContent  = k.unresolved.toLocaleString();
-  document.getElementById('kpi-reopen').textContent      = k.pct.toFixed(1) + '%';
-  const loc = currentLoc === 'all' ? 'All locations' : 'CX Home ' + currentLoc;
-  document.getElementById('kpi-created-sub').textContent    = loc;
-  document.getElementById('kpi-resolved-sub').textContent   = loc;
-  document.getElementById('kpi-unresolved-sub').textContent = loc;
-  document.getElementById('kpi-reopen-sub').textContent     = `${k.reopened.toLocaleString()} reopened / ${k.resolved.toLocaleString()} resolved`;
+  const isSingle = monthIndices.length === 1;
+  const newestLabel = MONTHS_DATA[Math.min(...monthIndices)].label;
+  const oldestLabel = MONTHS_DATA[Math.max(...monthIndices)].label;
+  const rangeLabel  = isSingle ? newestLabel : oldestLabel + ' → ' + newestLabel;
+  const locNote = selectedLocs.size === 0 ? 'All locations' : [...selectedLocs].join(', ');
+
+  document.getElementById('kpi-created').textContent    = k.created.toLocaleString();
+  document.getElementById('kpi-resolved').textContent   = k.resolved.toLocaleString();
+  document.getElementById('kpi-resrate').textContent    = k.resRate.toFixed(1) + '%';
+  document.getElementById('kpi-unresolved').textContent = k.unresolved.toLocaleString();
+  document.getElementById('kpi-reopen').textContent     = k.pct.toFixed(1) + '%';
+
+  document.getElementById('kpi-created-sub').textContent    = rangeLabel + ' · ' + locNote;
+  document.getElementById('kpi-resolved-sub').textContent   = rangeLabel + ' · ' + locNote;
+  document.getElementById('kpi-resrate-sub').textContent    = k.resolved.toLocaleString() + ' / ' + k.created.toLocaleString();
+  document.getElementById('kpi-unresolved-sub').textContent = 'Snapshot: ' + newestLabel;
+  document.getElementById('kpi-reopen-sub').textContent     = k.reopened.toLocaleString() + ' reopened / ' + k.resolved.toLocaleString() + ' resolved';
 }
 
-function renderTable(agents) {
-  const colMap = { name: 0, loc: 1, created: 2, resolved: 3, unresolved: 4, reopened: 5, pct: 6 };
-  document.querySelectorAll('thead th').forEach(th => th.classList.remove('sort-asc', 'sort-desc'));
-  const th = document.querySelectorAll('thead th')[colMap[sortKey]];
-  if (th) th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
-
-  const sorted = [...agents].sort((a, b) => {
-    let va = a[sortKey], vb = b[sortKey];
-    if (typeof va === 'string') { va = va.toLowerCase(); vb = vb.toLowerCase(); }
-    if (va < vb) return sortDir === 'asc' ? -1 : 1;
-    if (va > vb) return sortDir === 'asc' ? 1 : -1;
-    return 0;
+// ── Render Table ──
+function renderTable(agents, monthIndices) {
+  const isSingle = monthIndices.length === 1;
+  const singleIdx = isSingle ? monthIndices[0] : null;
+  const colKeys = ['name','loc','created','resolved','resRate','unresolved','reopened','pct'];
+  document.querySelectorAll('thead th').forEach((th, i) => {
+    th.classList.remove('sort-asc','sort-desc');
+    if (colKeys[i] === sortKey) th.classList.add(sortDir==='asc'?'sort-asc':'sort-desc');
   });
+  const sorted = [...agents].sort((a,b) => {
+    let va=a[sortKey], vb=b[sortKey];
+    if(typeof va==='string'){va=va.toLowerCase();vb=vb.toLowerCase();}
+    return va<vb?(sortDir==='asc'?-1:1):va>vb?(sortDir==='asc'?1:-1):0;
+  });
+  const newestLabel = MONTHS_DATA[Math.min(...monthIndices)].label;
+  const oldestLabel = MONTHS_DATA[Math.max(...monthIndices)].label;
+  document.getElementById('table-title').textContent = 'Agent Performance — ' +
+    (isSingle ? newestLabel : oldestLabel + ' → ' + newestLabel);
 
   const tbody = document.getElementById('agent-tbody');
   if (!sorted.length) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="7">No agents for this selection.</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="8">No agents match this selection.</td></tr>`;
     document.getElementById('table-count').textContent = '0 agents';
     return;
   }
-
   const tot = computeKPIs(sorted);
   tbody.innerHTML = sorted.map(a => {
-    const uc = a.unresolved >= 20 ? 'unresolved-crit' : a.unresolved >= 10 ? 'unresolved-high' : '';
+    const uc = a.unresolved>=20?'unresolved-crit':a.unresolved>=10?'unresolved-high':'';
+    let dh = '';
+    if (isSingle) {
+      const d = getMoMDelta(a.name, a.loc, singleIdx);
+      if (d!==null) dh = d>0?` <span class="delta-up">↑+${d}</span>`:d<0?` <span class="delta-down">↓${d}</span>`:`<span class="delta-flat"> →</span>`;
+    }
     return `<tr>
       <td class="agent-name">${a.name}</td>
       <td><span class="loc-badge ${locClass(a.loc)}">${a.loc}</span></td>
-      <td class="num">${a.created.toLocaleString()}</td>
+      <td class="num">${a.created.toLocaleString()}${dh}</td>
       <td class="num">${a.resolved.toLocaleString()}</td>
+      <td class="num"><span class="teal-pill">${a.resRate.toFixed(1)}%</span></td>
       <td class="num ${uc}">${a.unresolved}</td>
       <td class="num">${a.reopened}</td>
       <td class="num"><span class="pct-pill ${pctClass(a.pct)}">${a.pct.toFixed(1)}%</span></td>
     </tr>`;
   }).join('') + `<tr class="totals-row">
-    <td colspan="2">Total &mdash; ${sorted.length} agent${sorted.length !== 1 ? 's' : ''}</td>
+    <td colspan="2">Total — ${sorted.length} agent${sorted.length!==1?'s':''}</td>
     <td class="num">${tot.created.toLocaleString()}</td>
     <td class="num">${tot.resolved.toLocaleString()}</td>
+    <td class="num"><span class="teal-pill">${tot.resRate.toFixed(1)}%</span></td>
     <td class="num">${tot.unresolved.toLocaleString()}</td>
     <td class="num">${tot.reopened.toLocaleString()}</td>
     <td class="num"><span class="pct-pill ${pctClass(tot.pct)}">${tot.pct.toFixed(1)}%</span></td>
   </tr>`;
-  document.getElementById('table-count').textContent = `${sorted.length} agent${sorted.length !== 1 ? 's' : ''}`;
+  document.getElementById('table-count').textContent = sorted.length + ' agent' + (sorted.length!==1?'s':'');
 }
 
-function render() {
-  const agents = filtered(currentMonth);
-  document.getElementById('table-title').textContent = `Agent Performance — ${MONTHS_DATA[currentMonth].label}`;
-  renderKPIs(agents);
-  renderTable(agents);
-  document.getElementById('updated-label').textContent = `Data updated: ${DATA_UPDATED}`;
+// ── Charts ──
+let chartTrend, chartTop, chartLoc, chartScatter;
+
+function initCharts() {
+  Chart.defaults.color = '#7d8590';
+  Chart.defaults.borderColor = '#30363d';
+  const GC = 'rgba(48,54,61,0.6)';
+  const TT = { backgroundColor:'#21262d', titleColor:'#e6edf3', bodyColor:'#7d8590', borderColor:'#30363d', borderWidth:1 };
+  const BASE = {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ labels:{ color:'#7d8590', boxWidth:12, font:{size:11} } }, tooltip:TT }
+  };
+
+  chartTrend = new Chart(document.getElementById('chart-trend'), {
+    type:'line',
+    data:{ labels:[], datasets:[
+      { label:'Created',  data:[], borderColor:'#58a6ff', backgroundColor:'rgba(88,166,255,0.07)', fill:true, tension:0.4, pointRadius:4, pointBackgroundColor:'#58a6ff' },
+      { label:'Resolved', data:[], borderColor:'#3fb950', backgroundColor:'rgba(63,185,80,0.07)',  fill:true, tension:0.4, pointRadius:4, pointBackgroundColor:'#3fb950' }
+    ]},
+    options:{ ...BASE, scales:{ x:{grid:{color:GC},ticks:{color:'#7d8590',font:{size:11}}}, y:{grid:{color:GC},ticks:{color:'#7d8590',font:{size:11}}} } }
+  });
+
+  chartTop = new Chart(document.getElementById('chart-top'), {
+    type:'bar',
+    data:{ labels:[], datasets:[
+      { label:'Created',  data:[], backgroundColor:'rgba(88,166,255,0.25)',  borderColor:'#58a6ff', borderWidth:1, borderRadius:3 },
+      { label:'Resolved', data:[], backgroundColor:'rgba(63,185,80,0.25)', borderColor:'#3fb950', borderWidth:1, borderRadius:3 }
+    ]},
+    options:{ ...BASE, indexAxis:'y', scales:{ x:{grid:{color:GC},ticks:{color:'#7d8590',font:{size:11}}}, y:{grid:{color:GC},ticks:{color:'#e6edf3',font:{size:10}}} } }
+  });
+
+  chartLoc = new Chart(document.getElementById('chart-loc'), {
+    type:'bar',
+    data:{ labels:[], datasets:[
+      { label:'Brazil',   data:[], backgroundColor:'rgba(63,185,80,0.55)',   borderColor:'#3fb950', borderWidth:1 },
+      { label:'Cork',     data:[], backgroundColor:'rgba(88,166,255,0.55)',  borderColor:'#58a6ff', borderWidth:1 },
+      { label:'Dublin',   data:[], backgroundColor:'rgba(155,143,249,0.55)', borderColor:'#9b8ff9', borderWidth:1 },
+      { label:'Limerick', data:[], backgroundColor:'rgba(240,136,62,0.55)',  borderColor:'#f0883e', borderWidth:1 }
+    ]},
+    options:{ ...BASE, scales:{
+      x:{ stacked:true, grid:{color:GC}, ticks:{color:'#7d8590',font:{size:11}} },
+      y:{ stacked:true, grid:{color:GC}, ticks:{color:'#7d8590',font:{size:11}} }
+    }}
+  });
+
+  chartScatter = new Chart(document.getElementById('chart-scatter'), {
+    type:'scatter',
+    data:{ datasets: LOCS.map(loc => ({
+      label:loc, data:[], backgroundColor:LOC_COLORS[loc]+'99',
+      borderColor:LOC_COLORS[loc], borderWidth:1, pointRadius:6, pointHoverRadius:9
+    }))},
+    options:{ ...BASE,
+      plugins:{ ...BASE.plugins, tooltip:{ ...TT,
+        callbacks:{ label: ctx => ' ' + ctx.raw.name + ': ' + ctx.raw.x + ' created, ' + ctx.raw.y.toFixed(1) + '% reop' }
+      }},
+      scales:{
+        x:{ title:{display:true,text:'Tickets Created',color:'#7d8590',font:{size:11}}, grid:{color:GC}, ticks:{color:'#7d8590'} },
+        y:{ title:{display:true,text:'Reopened %',color:'#7d8590',font:{size:11}}, grid:{color:GC}, ticks:{color:'#7d8590'} }
+      }
+    }
+  });
 }
 
-function setMonth(i) { currentMonth = i; renderTabs(); render(); }
+function updateCharts(filteredAgents) {
+  const chrono = [...MONTHS_DATA].reverse();
+  const tLabels = chrono.map(m => m.label);
 
-function setLoc(loc) {
-  currentLoc = loc;
-  document.querySelectorAll('.filter-pill').forEach(p => p.classList.toggle('active', p.dataset.loc === loc));
+  const locFilter = a => selectedLocs.size === 0 || selectedLocs.has(a.loc);
+
+  chartTrend.data.labels = tLabels;
+  chartTrend.data.datasets[0].data = chrono.map(m => m.agents.filter(locFilter).reduce((s,a)=>s+a.created,0));
+  chartTrend.data.datasets[1].data = chrono.map(m => m.agents.filter(locFilter).reduce((s,a)=>s+a.resolved,0));
+  chartTrend.update();
+
+  const top = [...filteredAgents].sort((a,b)=>b.created-a.created).slice(0,10).reverse();
+  chartTop.data.labels = top.map(a => a.name.split(' ')[0]);
+  chartTop.data.datasets[0].data = top.map(a=>a.created);
+  chartTop.data.datasets[1].data = top.map(a=>a.resolved);
+  chartTop.update();
+
+  chartLoc.data.labels = tLabels;
+  LOCS.forEach((loc,i) => {
+    chartLoc.data.datasets[i].data = chrono.map(m =>
+      (selectedLocs.size===0||selectedLocs.has(loc)) ? m.agents.filter(a=>a.loc===loc).reduce((s,a)=>s+a.created,0) : 0
+    );
+  });
+  chartLoc.update();
+
+  LOCS.forEach((loc,i) => {
+    chartScatter.data.datasets[i].data = filteredAgents
+      .filter(a=>a.loc===loc && a.created>0)
+      .map(a=>({x:a.created, y:a.pct, name:a.name}));
+  });
+  chartScatter.update();
+}
+
+// ── Filter init ──
+function populateMonthDropdowns() {
+  const chrono = [...MONTHS_DATA].reverse();
+  const fs = document.getElementById('from-select');
+  const ts = document.getElementById('to-select');
+  chrono.forEach((m, ci) => {
+    const arrayIdx = MONTHS_DATA.length - 1 - ci;
+    fs.add(new Option(m.label, arrayIdx));
+    ts.add(new Option(m.label, arrayIdx));
+  });
+  fs.value = String(MONTHS_DATA.length - 1);
+  ts.value = '0';
+}
+
+// ── Event handlers ──
+function onSearch(v) { searchText = v.trim().toLowerCase(); render(); }
+
+function onMonthRange() {
+  let f = parseInt(document.getElementById('from-select').value);
+  let t = parseInt(document.getElementById('to-select').value);
+  if (f < t) { [f,t]=[t,f]; }
+  fromMonthIdx = f; toMonthIdx = t;
+  render();
+}
+
+function toggleLoc(loc) {
+  if (loc === 'all') {
+    selectedLocs.clear();
+  } else {
+    if (selectedLocs.has(loc)) selectedLocs.delete(loc);
+    else selectedLocs.add(loc);
+  }
+  document.getElementById('loc-all').classList.toggle('active', selectedLocs.size === 0);
+  document.querySelectorAll('.filter-pill[data-loc]').forEach(p =>
+    p.classList.toggle('active', selectedLocs.has(p.dataset.loc))
+  );
+  render();
+}
+
+function onThreshold(v) {
+  volumeThreshold = parseInt(v) || 0;
+  document.getElementById('threshold-val').textContent = v > 0 ? v + '+ tickets' : 'All';
+  render();
+}
+
+function resetFilters() {
+  document.getElementById('search-input').value = '';
+  searchText = ''; selectedLocs.clear(); volumeThreshold = 0;
+  document.getElementById('threshold-slider').value = '0';
+  document.getElementById('threshold-val').textContent = 'All';
+  document.getElementById('from-select').value = String(MONTHS_DATA.length - 1);
+  document.getElementById('to-select').value = '0';
+  fromMonthIdx = MONTHS_DATA.length - 1; toMonthIdx = 0;
+  document.getElementById('loc-all').classList.add('active');
+  document.querySelectorAll('.filter-pill[data-loc]').forEach(p => p.classList.remove('active'));
   render();
 }
 
 function sortBy(key) {
-  if (sortKey === key) { sortDir = sortDir === 'asc' ? 'desc' : 'asc'; }
-  else { sortKey = key; sortDir = (key === 'name' || key === 'loc') ? 'asc' : 'desc'; }
-  renderTable(filtered(currentMonth));
+  if (sortKey === key) sortDir = sortDir==='asc'?'desc':'asc';
+  else { sortKey = key; sortDir = (key==='name'||key==='loc') ? 'asc' : 'desc'; }
+  const mi = getSelectedMonthIndices();
+  renderTable(aggregateAgents(mi), mi);
 }
 
-/* ── Clock ── */
+// ── Main render ──
+function render() {
+  const mi = getSelectedMonthIndices();
+  const agents = aggregateAgents(mi);
+  renderKPIs(agents, mi);
+  renderTable(agents, mi);
+  updateCharts(agents);
+  document.getElementById('updated-label').textContent = 'Data updated: ' + DATA_UPDATED;
+}
+
+// ── Clock ──
 function tick() {
   const n = new Date();
   document.getElementById('clock').textContent =
-    n.toLocaleDateString('en-IE', { weekday:'short', day:'numeric', month:'short' }) + ' · ' +
-    n.toLocaleTimeString('en-IE', { hour:'2-digit', minute:'2-digit' });
+    n.toLocaleDateString('en-IE',{weekday:'short',day:'numeric',month:'short'}) + ' · ' +
+    n.toLocaleTimeString('en-IE',{hour:'2-digit',minute:'2-digit'});
 }
 tick(); setInterval(tick, 15000);
 document.getElementById('footer-year').textContent = new Date().getFullYear() + ' · Leevin-CXHome-Hub';
 
-renderTabs();
+populateMonthDropdowns();
+initCharts();
 render();
 
-/* ── Network background ── */
-(function () {
-  const cv = document.getElementById('bg-canvas'), ctx = cv.getContext('2d');
-  const N = 70, DIST = 180, SPD = 0.3;
-  let W, H, nodes, t = 0;
-  const PALETTE = [[124,106,247],[88,166,255],[56,211,203],[155,143,249],[79,172,254]];
-  function resize() { W = cv.width = innerWidth; H = cv.height = innerHeight; }
-  function mkNode() {
-    const color = PALETTE[Math.floor(Math.random() * PALETTE.length)];
-    return { x: Math.random()*W, y: Math.random()*H, vx:(Math.random()-.5)*SPD, vy:(Math.random()-.5)*SPD, r:Math.random()*2.5+1.2, color, phase:Math.random()*Math.PI*2 };
-  }
-  function frame() {
-    ctx.clearRect(0,0,W,H); t+=0.018;
-    for (let i=0;i<N;i++) for (let j=i+1;j<N;j++) {
-      const dx=nodes[i].x-nodes[j].x, dy=nodes[i].y-nodes[j].y, d=Math.sqrt(dx*dx+dy*dy);
-      if (d<DIST) {
-        const a=(1-d/DIST)*0.55, c1=nodes[i].color, c2=nodes[j].color;
+// ── Network background ──
+(function(){
+  const cv=document.getElementById('bg-canvas'),ctx=cv.getContext('2d');
+  const N=70,DIST=180,SPD=0.3;
+  let W,H,nodes,t=0;
+  const PAL=[[124,106,247],[88,166,255],[56,211,203],[155,143,249],[79,172,254]];
+  function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight;}
+  function mk(){const c=PAL[Math.floor(Math.random()*PAL.length)];return{x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*SPD,vy:(Math.random()-.5)*SPD,r:Math.random()*2.5+1.2,color:c,phase:Math.random()*Math.PI*2};}
+  function frame(){
+    ctx.clearRect(0,0,W,H);t+=0.018;
+    for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){
+      const dx=nodes[i].x-nodes[j].x,dy=nodes[i].y-nodes[j].y,d=Math.sqrt(dx*dx+dy*dy);
+      if(d<DIST){const a=(1-d/DIST)*0.55,c1=nodes[i].color,c2=nodes[j].color;
         ctx.strokeStyle=`rgba(${(c1[0]+c2[0])>>1},${(c1[1]+c2[1])>>1},${(c1[2]+c2[2])>>1},${a})`;
-        ctx.lineWidth=0.9; ctx.beginPath(); ctx.moveTo(nodes[i].x,nodes[i].y); ctx.lineTo(nodes[j].x,nodes[j].y); ctx.stroke();
-      }
+        ctx.lineWidth=0.9;ctx.beginPath();ctx.moveTo(nodes[i].x,nodes[i].y);ctx.lineTo(nodes[j].x,nodes[j].y);ctx.stroke();}
     }
-    for (const n of nodes) {
-      const pulse=1+0.35*Math.sin(t+n.phase), [r,g,b]=n.color, gR=n.r*pulse*4.5;
-      const grad=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,gR);
-      grad.addColorStop(0,`rgba(${r},${g},${b},0.55)`); grad.addColorStop(0.4,`rgba(${r},${g},${b},0.18)`); grad.addColorStop(1,`rgba(${r},${g},${b},0)`);
-      ctx.beginPath(); ctx.arc(n.x,n.y,gR,0,Math.PI*2); ctx.fillStyle=grad; ctx.fill();
-      ctx.beginPath(); ctx.arc(n.x,n.y,n.r*pulse*0.85,0,Math.PI*2);
-      ctx.fillStyle=`rgba(${r},${g},${b},0.95)`; ctx.shadowColor=`rgba(${r},${g},${b},0.9)`; ctx.shadowBlur=10; ctx.fill(); ctx.shadowBlur=0;
-      n.x+=n.vx; n.y+=n.vy;
-      if(n.x<0||n.x>W) n.vx*=-1; if(n.y<0||n.y>H) n.vy*=-1;
+    for(const n of nodes){
+      const p=1+0.35*Math.sin(t+n.phase),[r,g,b]=n.color,gR=n.r*p*4.5;
+      const gr=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,gR);
+      gr.addColorStop(0,`rgba(${r},${g},${b},0.55)`);gr.addColorStop(0.4,`rgba(${r},${g},${b},0.18)`);gr.addColorStop(1,`rgba(${r},${g},${b},0)`);
+      ctx.beginPath();ctx.arc(n.x,n.y,gR,0,Math.PI*2);ctx.fillStyle=gr;ctx.fill();
+      ctx.beginPath();ctx.arc(n.x,n.y,n.r*p*0.85,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${r},${g},${b},0.95)`;ctx.shadowColor=`rgba(${r},${g},${b},0.9)`;ctx.shadowBlur=10;ctx.fill();ctx.shadowBlur=0;
+      n.x+=n.vx;n.y+=n.vy;if(n.x<0||n.x>W)n.vx*=-1;if(n.y<0||n.y>H)n.vy*=-1;
     }
     requestAnimationFrame(frame);
   }
-  window.addEventListener('resize', resize); resize();
-  nodes = Array.from({length:N}, mkNode); frame();
+  window.addEventListener('resize',resize);resize();
+  nodes=Array.from({length:N},mk);frame();
 })();
 </script>
-
 </body>
 </html>

@@ -380,9 +380,8 @@ const DATA_UPDATED = "2026-06-06";
 /* DATA_END */
 
 // ── State ──
-let fromMonthIdx = MONTHS_DATA.length - 1;
-let toMonthIdx   = 0;
-let selectedLocs = new Set();
+let selectedMonths = new Set(); // empty = all months
+let selectedLocs   = new Set();
 let searchText   = '';
 let volumeThreshold = 0;
 let sortKey = 'created';
@@ -409,9 +408,8 @@ function workingDaysInMonth(key) {
 }
 
 function getSelectedMonthIndices() {
-  const idx = [];
-  for (let i = toMonthIdx; i <= fromMonthIdx; i++) idx.push(i);
-  return idx;
+  if (selectedMonths.size === 0) return Array.from({length: MONTHS_DATA.length}, (_, i) => i);
+  return [...selectedMonths].sort((a, b) => a - b);
 }
 
 function aggregateAgents(monthIndices) {
@@ -462,7 +460,10 @@ function renderKPIs(agents, monthIndices) {
   const isSingle = monthIndices.length === 1;
   const newestLabel = MONTHS_DATA[Math.min(...monthIndices)].label;
   const oldestLabel = MONTHS_DATA[Math.max(...monthIndices)].label;
-  const rangeLabel  = isSingle ? newestLabel : oldestLabel + ' → ' + newestLabel;
+  const chronoLabels = [...monthIndices].sort((a,b) => b-a).map(i => MONTHS_DATA[i].label);
+  const rangeLabel = selectedMonths.size === 0 ? 'All months'
+    : isSingle ? newestLabel
+    : chronoLabels.join(', ');
   const locNote = selectedLocs.size === 0 ? 'All locations' : [...selectedLocs].join(', ');
 
   document.getElementById('kpi-created').textContent    = k.created.toLocaleString();
@@ -495,9 +496,10 @@ function renderTable(agents, monthIndices) {
     return va<vb?(sortDir==='asc'?-1:1):va>vb?(sortDir==='asc'?1:-1):0;
   });
   const newestLabel = MONTHS_DATA[Math.min(...monthIndices)].label;
-  const oldestLabel = MONTHS_DATA[Math.max(...monthIndices)].label;
-  document.getElementById('table-title').textContent = 'Agent Performance — ' +
-    (isSingle ? newestLabel : oldestLabel + ' → ' + newestLabel);
+  const tableChronoLabels = [...monthIndices].sort((a,b)=>b-a).map(i=>MONTHS_DATA[i].label);
+  const tableRangeLabel = selectedMonths.size === 0 ? 'All months'
+    : isSingle ? newestLabel : tableChronoLabels.join(', ');
+  document.getElementById('table-title').textContent = 'Agent Performance — ' + tableRangeLabel;
 
   const tbody = document.getElementById('agent-tbody');
   if (!sorted.length) {
@@ -658,15 +660,14 @@ function onSearch(v) { searchText = v.trim().toLowerCase(); render(); }
 
 function onMonthPill(idx) {
   if (idx === -1) {
-    fromMonthIdx = MONTHS_DATA.length - 1;
-    toMonthIdx   = 0;
+    selectedMonths.clear();
   } else {
-    fromMonthIdx = idx;
-    toMonthIdx   = idx;
+    if (selectedMonths.has(idx)) selectedMonths.delete(idx);
+    else selectedMonths.add(idx);
   }
-  document.getElementById('month-all').classList.toggle('active', idx === -1);
+  document.getElementById('month-all').classList.toggle('active', selectedMonths.size === 0);
   document.querySelectorAll('#month-pills .filter-pill[data-month-idx]').forEach(p =>
-    p.classList.toggle('active', parseInt(p.dataset.monthIdx) === idx)
+    p.classList.toggle('active', selectedMonths.has(parseInt(p.dataset.monthIdx)))
   );
   render();
 }
@@ -698,7 +699,10 @@ function resetFilters() {
   document.getElementById('threshold-val').textContent = 'All';
   document.getElementById('loc-all').classList.add('active');
   document.querySelectorAll('.filter-pill[data-loc]').forEach(p => p.classList.remove('active'));
-  onMonthPill(-1);
+  selectedMonths.clear();
+  document.getElementById('month-all').classList.add('active');
+  document.querySelectorAll('#month-pills .filter-pill[data-month-idx]').forEach(p => p.classList.remove('active'));
+  render();
 }
 
 function sortBy(key) {

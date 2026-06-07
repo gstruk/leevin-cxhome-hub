@@ -113,6 +113,34 @@ footer{text-align:center;padding:18px;color:var(--muted);font-size:0.73rem;borde
 </style>
 </head>
 <body>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  const firebaseConfig = {
+    apiKey:            "AIzaSyD3c_JWbEtLQ2eMlSWAJTxPILN67XkjwTk",
+    authDomain:        "leevin-cxhome-hub.firebaseapp.com",
+    projectId:         "leevin-cxhome-hub",
+    storageBucket:     "leevin-cxhome-hub.firebasestorage.app",
+    messagingSenderId: "502783167107",
+    appId:             "1:502783167107:web:8a86641b6ef897bd0ca9b6"
+  };
+  const auth = getAuth(initializeApp(firebaseConfig));
+  document.documentElement.style.visibility = 'hidden';
+  onAuthStateChanged(auth, user => {
+    if (!user) {
+      window.location.replace('/leevin-cxhome-hub/login.html');
+    } else {
+      document.documentElement.style.visibility = '';
+      const el = document.getElementById('user-email');
+      if (el) el.textContent = user.email;
+    }
+  });
+  window.doSignOut = () => signOut(auth).then(() =>
+    window.location.replace('/leevin-cxhome-hub/login.html')
+  );
+</script>
+
 <canvas id="bg-canvas"></canvas>
 
 <header>
@@ -120,8 +148,10 @@ footer{text-align:center;padding:18px;color:var(--muted);font-size:0.73rem;borde
     <div class="header-icon">🏠</div>
     <div><span>Leevin-CXHome-Hub</span><small>CX Team Performance</small></div>
   </div>
-  <div style="display:flex;align-items:center;gap:16px;">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span id="user-email" style="font-size:0.72rem;color:var(--muted);"></span>
     <a class="back-btn" href="https://gstruk.github.io/leevin-cxhome-hub/">← Hub</a>
+    <button class="back-btn" onclick="doSignOut()" style="border:none;cursor:pointer;background:transparent;">Sign out</button>
     <div class="header-time" id="clock"></div>
   </div>
 </header>

@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Collection — Leevin Home</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#0d1117; --surface:#161b22; --surface2:#21262d; --border:#30363d;
+  --text:#e6edf3; --muted:#7d8590; --accent:#3fb950; --accent2:#56d364;
+  --green:#3fb950; --blue:#58a6ff; --orange:#f0883e; --red:#f85149; --teal:#39d0d0;
+  --purple:#7c6af7; --yellow:#e3c349;
+}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden;}
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.72;}
+header,main,footer{position:relative;z-index:1;}
+
+header{background:rgba(22,27,34,0.88);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 32px;height:62px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
+.header-brand{display:flex;align-items:center;gap:12px;}
+.header-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),var(--teal));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1.05rem;box-shadow:0 0 16px rgba(63,185,80,0.4);}
+.header-brand span{font-size:1rem;font-weight:700;letter-spacing:-0.01em;}
+.header-brand small{font-size:0.7rem;color:var(--muted);display:block;margin-top:-1px;}
+.header-time{font-size:0.78rem;color:var(--muted);font-variant-numeric:tabular-nums;}
+.back-btn{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:0.78rem;font-weight:500;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:transparent;transition:color .15s,border-color .15s,background .15s;}
+.back-btn:hover{color:var(--text);border-color:var(--accent);background:var(--surface2);}
+
+main{flex:1;display:flex;flex-direction:column;padding:32px 28px 80px;gap:28px;width:100%;box-sizing:border-box;}
+.page-title h1{font-size:1.45rem;font-weight:800;letter-spacing:-0.02em;}
+.page-title p{color:var(--muted);font-size:0.82rem;margin-top:4px;}
+
+.filter-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:14px;}
+.filter-row{display:flex;align-items:center;flex-wrap:wrap;gap:10px;}
+.f-label{font-size:0.69rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);white-space:nowrap;}
+.filter-pill{padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:0.75rem;font-weight:600;cursor:pointer;transition:all .15s;user-select:none;display:inline-flex;align-items:center;gap:5px;}
+.filter-pill:hover{border-color:var(--accent);color:var(--text);}
+.filter-pill.active{background:rgba(63,185,80,0.15);border-color:var(--accent);color:var(--accent2);}
+.filter-pill.all-pill.active{background:rgba(63,185,80,0.15);border-color:var(--accent);color:var(--accent2);}
+.reset-btn{padding:5px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.75rem;cursor:pointer;transition:all .15s;margin-left:auto;}
+.reset-btn:hover{border-color:var(--red);color:var(--red);}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:14px;}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;}
+.kpi-label{font-size:0.68rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.kpi-value{font-size:1.65rem;font-weight:800;letter-spacing:-0.03em;font-variant-numeric:tabular-nums;line-height:1;}
+.kpi-sub{font-size:0.72rem;color:var(--muted);margin-top:5px;}
+.kpi-total .kpi-value{color:var(--green);}
+.kpi-top .kpi-value{font-size:1.2rem;color:var(--blue);}
+.kpi-mom .kpi-value{color:var(--text);}
+.kpi-ytd .kpi-value{color:var(--yellow);}
+.delta-up{color:#f85149;font-weight:700;}
+.delta-down{color:#3fb950;font-weight:700;}
+
+.charts-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px 20px;}
+.chart-title{font-size:0.72rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.chart-container{position:relative;height:220px;}
+
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.table-head-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);}
+.table-head-bar strong{font-size:0.82rem;}
+.table-head-bar span{font-size:0.72rem;color:var(--muted);}
+.tbl-scroll{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+thead th{padding:11px 14px;text-align:left;font-size:0.68rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;}
+tbody tr{border-bottom:1px solid var(--border);transition:background .12s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:var(--surface2);}
+td{padding:10px 14px;vertical-align:middle;white-space:nowrap;}
+.num{font-variant-numeric:tabular-nums;text-align:right;}
+.totals-row td{border-top:2px solid var(--border);font-weight:700;font-size:0.78rem;}
+.cat-dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.cat-name-cell{display:flex;align-items:center;gap:6px;}
+.pct-bar-bg{display:inline-block;background:var(--surface2);border-radius:3px;width:60px;height:6px;vertical-align:middle;overflow:hidden;}
+.pct-bar-fill{height:100%;border-radius:3px;}
+
+.updated-label{font-size:0.7rem;color:var(--muted);text-align:right;}
+footer{text-align:center;padding:18px;color:var(--muted);font-size:0.73rem;border-top:1px solid var(--border);}
+
+@media(max-width:900px){.charts-grid{grid-template-columns:1fr;}}
+@media(max-width:640px){header{padding:0 16px;}main{padding:24px 14px 60px;gap:20px;}.kpi-grid{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  const firebaseConfig = {
+    apiKey:            "AIzaSyD3c_JWbEtLQ2eMlSWAJTxPILN67XkjwTk",
+    authDomain:        "leevin-cxhome-hub.firebaseapp.com",
+    projectId:         "leevin-cxhome-hub",
+    storageBucket:     "leevin-cxhome-hub.firebasestorage.app",
+    messagingSenderId: "502783167107",
+    appId:             "1:502783167107:web:8a86641b6ef897bd0ca9b6"
+  };
+  const auth = getAuth(initializeApp(firebaseConfig));
+  document.documentElement.style.visibility = 'hidden';
+  onAuthStateChanged(auth, user => {
+    if (!user) {
+      window.location.replace('/leevin-cxhome-hub/login.html');
+    } else {
+      document.documentElement.style.visibility = '';
+      const el = document.getElementById('user-email');
+      if (el) el.textContent = user.email;
+    }
+  });
+  window.doSignOut = () => signOut(auth).then(() =>
+    window.location.replace('/leevin-cxhome-hub/login.html')
+  );
+</script>
+
+<canvas id="bg-canvas"></canvas>
+
+<header>
+  <div class="header-brand">
+    <div class="header-icon">💰</div>
+    <div><span>Leevin-CXHome-Hub</span><small>Collection Dashboard</small></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span id="user-email" style="font-size:0.72rem;color:var(--muted);"></span>
+    <a class="back-btn" href="https://gstruk.github.io/leevin-cxhome-hub/">← Hub</a>
+    <button class="back-btn" onclick="doSignOut()" style="border:none;cursor:pointer;background:transparent;">Sign out</button>
+    <div class="header-time" id="clock"></div>
+  </div>
+</header>
+
+<main>
+  <div class="page-title">
+    <h1>💰 Collection — Fee Revenue</h1>
+    <p>Room fee collection breakdown by category · Year to date 2026</p>
+  </div>
+
+  <div class="filter-panel">
+    <div class="filter-row">
+      <span class="f-label">Month</span>
+      <div id="month-pills" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+      <button class="reset-btn" onclick="resetFilters()">↺ Reset</button>
+    </div>
+    <div class="filter-row">
+      <span class="f-label">Category</span>
+      <div id="cat-pills" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card kpi-total">
+      <div class="kpi-label">Total Collected</div>
+      <div class="kpi-value" id="kpi-total">—</div>
+      <div class="kpi-sub" id="kpi-total-sub"></div>
+    </div>
+    <div class="kpi-card kpi-top">
+      <div class="kpi-label">Top Category</div>
+      <div class="kpi-value" id="kpi-top">—</div>
+      <div class="kpi-sub" id="kpi-top-sub"></div>
+    </div>
+    <div class="kpi-card kpi-mom">
+      <div class="kpi-label">MoM Change</div>
+      <div class="kpi-value" id="kpi-mom">—</div>
+      <div class="kpi-sub" id="kpi-mom-sub"></div>
+    </div>
+    <div class="kpi-card kpi-ytd">
+      <div class="kpi-label">YTD Total</div>
+      <div class="kpi-value" id="kpi-ytd">—</div>
+      <div class="kpi-sub" id="kpi-ytd-sub"></div>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Monthly Revenue Trend</div>
+      <div class="chart-container"><canvas id="chart-trend"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Category Breakdown — Selected Period</div>
+      <div class="chart-container"><canvas id="chart-cats"></canvas></div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <div class="table-head-bar">
+      <strong id="table-title">Fee Collection by Category</strong>
+      <span id="table-count"></span>
+    </div>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr id="table-header-row"></tr></thead>
+        <tbody id="cat-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="updated-label" id="updated-label"></div>
+</main>
+
+<footer>Leevin Home &mdash; Collection Dashboard &mdash; <span id="footer-year"></span></footer>
+
+<script>
+/* DATA_START */
+const MONTHS_DATA = [
+  {
+    label: "May 2026", key: "May/2026",
+    categories: [
+      { name: "Cleaning",     amount: 3042.38 },
+      { name: "Late Payment", amount: 2493.52 },
+      { name: "Replacement",  amount: 3205.00 },
+      { name: "Penalty",      amount: 1135.39 },
+      { name: "Maintenance",  amount: 2067.39 }
+    ]
+  },
+  {
+    label: "Apr 2026", key: "April/2026",
+    categories: [
+      { name: "Cleaning",     amount: 6295.60 },
+      { name: "Late Payment", amount: 3713.83 },
+      { name: "Replacement",  amount: 3545.00 },
+      { name: "Penalty",      amount: 2238.22 },
+      { name: "Maintenance",  amount: 1800.84 }
+    ]
+  },
+  {
+    label: "Mar 2026", key: "March/2026",
+    categories: [
+      { name: "Cleaning",     amount: 3815.33 },
+      { name: "Late Payment", amount: 4310.84 },
+      { name: "Replacement",  amount: 4140.00 },
+      { name: "Penalty",      amount: 3363.08 },
+      { name: "Maintenance",  amount: 2489.94 }
+    ]
+  },
+  {
+    label: "Feb 2026", key: "February/2026",
+    categories: [
+      { name: "Cleaning",     amount: 2215.03 },
+      { name: "Late Payment", amount: 2665.46 },
+      { name: "Replacement",  amount: 3060.00 },
+      { name: "Penalty",      amount: 2198.98 },
+      { name: "Maintenance",  amount: 1722.44 }
+    ]
+  },
+  {
+    label: "Jan 2026", key: "January/2026",
+    categories: [
+      { name: "Cleaning",     amount:  741.71 },
+      { name: "Late Payment", amount: 1624.56 },
+      { name: "Replacement",  amount: 3330.00 },
+      { name: "Penalty",      amount: 1100.11 },
+      { name: "Maintenance",  amount:  949.51 }
+    ]
+  }
+];
+const DATA_UPDATED = "2026-06-07";
+/* DATA_END */
+
+// ── Category colours ──
+const CAT_COLORS = {
+  "Cleaning":     "#3fb950",
+  "Late Payment": "#f0883e",
+  "Replacement":  "#58a6ff",
+  "Penalty":      "#f85149",
+  "Maintenance":  "#7c6af7",
+};
+const CAT_BG = {
+  "Cleaning":     "rgba(63,185,80,0.55)",
+  "Late Payment": "rgba(240,136,62,0.55)",
+  "Replacement":  "rgba(88,166,255,0.55)",
+  "Penalty":      "rgba(248,81,73,0.55)",
+  "Maintenance":  "rgba(124,106,247,0.55)",
+};
+const catColor = n => CAT_COLORS[n] || '#7d8590';
+const catBg    = n => CAT_BG[n]     || 'rgba(120,120,120,0.45)';
+
+// ── State ──
+let selectedMonths = new Set();
+let selectedCats   = new Set();
+
+// ── Helpers ──
+const fmt  = n => '€' + n.toLocaleString('en-IE', {minimumFractionDigits:2, maximumFractionDigits:2});
+const fmtK = n => n >= 10000 ? '€' + (n/1000).toFixed(1) + 'k' : fmt(n);
+
+function getMonthIndices() {
+  return selectedMonths.size === 0
+    ? MONTHS_DATA.map((_,i) => i)
+    : [...selectedMonths].sort((a,b) => a-b);
+}
+
+function getAllCatNames() {
+  const seen = new Set();
+  MONTHS_DATA.forEach(m => m.categories.forEach(c => seen.add(c.name)));
+  return [...seen];
+}
+
+function getActiveCatNames() {
+  const all = getAllCatNames();
+  return selectedCats.size === 0 ? all : all.filter(n => selectedCats.has(n));
+}
+
+function aggregateCats(monthIndices) {
+  const active = getActiveCatNames();
+  const totals = {};
+  active.forEach(n => totals[n] = 0);
+  monthIndices.forEach(mi =>
+    MONTHS_DATA[mi].categories.forEach(c => {
+      if (active.includes(c.name)) totals[c.name] += c.amount;
+    })
+  );
+  return totals;
+}
+
+function monthTotal(mi) {
+  return MONTHS_DATA[mi].categories
+    .filter(c => selectedCats.size === 0 || selectedCats.has(c.name))
+    .reduce((s,c) => s + c.amount, 0);
+}
+
+// ── KPIs ──
+function renderKPIs(monthIndices) {
+  const totals     = aggregateCats(monthIndices);
+  const grandTotal = Object.values(totals).reduce((s,v) => s+v, 0);
+
+  document.getElementById('kpi-total').textContent = fmtK(grandTotal);
+  const labels = [...monthIndices].sort((a,b) => b-a).map(i => MONTHS_DATA[i].label);
+  document.getElementById('kpi-total-sub').textContent =
+    monthIndices.length === MONTHS_DATA.length ? 'All months' : labels.join(', ');
+
+  const sorted = Object.entries(totals).sort((a,b) => b[1]-a[1]);
+  if (sorted.length > 0) {
+    const [topName, topAmt] = sorted[0];
+    document.getElementById('kpi-top').textContent = topName;
+    const pct = grandTotal > 0 ? ((topAmt/grandTotal)*100).toFixed(1) : '0';
+    document.getElementById('kpi-top-sub').textContent = fmt(topAmt) + ' · ' + pct + '% of total';
+    document.querySelector('.kpi-top .kpi-value').style.color = catColor(topName);
+  }
+
+  const momEl  = document.getElementById('kpi-mom');
+  const momSub = document.getElementById('kpi-mom-sub');
+  const refIdx = selectedMonths.size === 1 ? [...selectedMonths][0]
+               : selectedMonths.size === 0 ? 0 : null;
+
+  if (refIdx !== null && refIdx < MONTHS_DATA.length - 1) {
+    const cur  = monthTotal(refIdx);
+    const prev = monthTotal(refIdx + 1);
+    const delta = cur - prev;
+    const pct = prev > 0 ? (delta/prev*100).toFixed(1) : '0';
+    const isUp = delta >= 0;
+    momEl.innerHTML = `<span class="${isUp ? 'delta-up' : 'delta-down'}">${isUp ? '+' : ''}${pct}%</span>`;
+    momSub.textContent = MONTHS_DATA[refIdx].label + ' vs ' + MONTHS_DATA[refIdx+1].label;
+  } else {
+    momEl.textContent  = '—';
+    momSub.textContent = selectedMonths.size > 1 ? 'Select a single month' : 'No prior month';
+  }
+
+  const ytdTotals = aggregateCats(MONTHS_DATA.map((_,i) => i));
+  const ytdTotal  = Object.values(ytdTotals).reduce((s,v) => s+v, 0);
+  document.getElementById('kpi-ytd').textContent = fmtK(ytdTotal);
+  document.getElementById('kpi-ytd-sub').textContent =
+    'Jan – ' + MONTHS_DATA[0].label.split(' ')[0] + ' ' + MONTHS_DATA[0].label.split(' ')[1];
+}
+
+// ── Table ──
+function renderTable(monthIndices) {
+  const active       = getActiveCatNames();
+  const sortedMonths = [...monthIndices].sort((a,b) => b-a);
+  const totals       = aggregateCats(monthIndices);
+  const grandTotal   = Object.values(totals).reduce((s,v) => s+v, 0);
+  const sortedCats   = active.slice().sort((a,b) => (totals[b]||0) - (totals[a]||0));
+
+  document.getElementById('table-header-row').innerHTML =
+    '<th>Category</th>' +
+    sortedMonths.map(i => `<th class="num">${MONTHS_DATA[i].label}</th>`).join('') +
+    '<th class="num">Total</th><th class="num">% of Period</th>';
+
+  const tbody = document.getElementById('cat-tbody');
+  tbody.innerHTML = '';
+
+  if (active.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="99" style="text-align:center;color:var(--muted);padding:36px;font-style:italic;">No data for selected filters.</td></tr>';
+    return;
+  }
+
+  sortedCats.forEach(cat => {
+    const total  = totals[cat] || 0;
+    const pct    = grandTotal > 0 ? (total/grandTotal*100).toFixed(1) : '0';
+    const color  = catColor(cat);
+    const barW   = grandTotal > 0 ? Math.round(total/grandTotal*100) : 0;
+    const cells  = sortedMonths.map(mi => {
+      const c = MONTHS_DATA[mi].categories.find(x => x.name === cat);
+      return `<td class="num">${c ? fmt(c.amount) : '—'}</td>`;
+    }).join('');
+    tbody.innerHTML += `<tr>
+      <td><div class="cat-name-cell"><span class="cat-dot" style="background:${color}"></span>${cat}</div></td>
+      ${cells}
+      <td class="num" style="color:${color};font-weight:700;">${fmt(total)}</td>
+      <td class="num">
+        <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;">
+          <span style="color:${color};font-weight:600;">${pct}%</span>
+          <div class="pct-bar-bg"><div class="pct-bar-fill" style="width:${barW}%;background:${color};"></div></div>
+        </div>
+      </td>
+    </tr>`;
+  });
+
+  const mTotals = sortedMonths.map(mi => {
+    const t = MONTHS_DATA[mi].categories
+      .filter(c => active.includes(c.name))
+      .reduce((s,c) => s+c.amount, 0);
+    return `<td class="num" style="color:var(--green);">${fmt(t)}</td>`;
+  }).join('');
+  tbody.innerHTML += `<tr class="totals-row">
+    <td style="color:var(--muted);">Total</td>
+    ${mTotals}
+    <td class="num" style="color:var(--green);">${fmt(grandTotal)}</td>
+    <td class="num" style="color:var(--muted);">100%</td>
+  </tr>`;
+
+  document.getElementById('table-count').textContent =
+    sortedMonths.length === 1 ? MONTHS_DATA[sortedMonths[0]].label
+    : sortedMonths.length + ' months · ' + fmt(grandTotal);
+}
+
+// ── Charts ──
+let chartTrend, chartCats;
+const GC   = 'rgba(48,54,61,0.6)';
+const BASE = {
+  responsive:true, maintainAspectRatio:false,
+  plugins:{ legend:{display:false}, tooltip:{
+    backgroundColor:'#161b22', borderColor:'#30363d', borderWidth:1,
+    titleColor:'#e6edf3', bodyColor:'#7d8590', padding:10,
+    callbacks:{ label: ctx => ' ' + fmt(ctx.raw) }
+  }}
+};
+
+function initCharts() {
+  chartTrend = new Chart(document.getElementById('chart-trend'), {
+    type:'bar',
+    data:{ labels:[], datasets:[
+      { label:'Total Collected', data:[],
+        backgroundColor:[], borderColor:[], borderWidth:1, borderRadius:4 }
+    ]},
+    options:{ ...BASE,
+      scales:{
+        x:{grid:{color:GC},ticks:{color:'#7d8590',font:{size:11}}},
+        y:{grid:{color:GC},ticks:{color:'#7d8590',font:{size:11},callback:v => '€'+Math.round(v/1000)+'k'}}
+      }
+    }
+  });
+
+  chartCats = new Chart(document.getElementById('chart-cats'), {
+    type:'bar',
+    data:{ labels:[], datasets:[
+      { label:'Amount', data:[],
+        backgroundColor:[], borderColor:[], borderWidth:1, borderRadius:4 }
+    ]},
+    options:{ ...BASE, indexAxis:'y',
+      scales:{
+        x:{grid:{color:GC},ticks:{color:'#7d8590',font:{size:11},callback:v => '€'+Math.round(v/1000)+'k'}},
+        y:{grid:{color:GC},ticks:{color:'#e6edf3',font:{size:11}}}
+      }
+    }
+  });
+}
+
+function updateCharts(monthIndices) {
+  const selectedSet = new Set(monthIndices);
+  const chrono      = [...MONTHS_DATA].reverse();
+
+  chartTrend.data.labels = chrono.map(m => m.label);
+  chartTrend.data.datasets[0].data = chrono.map(m =>
+    m.categories.filter(c => selectedCats.size === 0 || selectedCats.has(c.name))
+                 .reduce((s,c) => s+c.amount, 0)
+  );
+  chartTrend.data.datasets[0].backgroundColor = chrono.map(m => {
+    const idx = MONTHS_DATA.indexOf(m);
+    return (selectedMonths.size === 0 || selectedSet.has(idx)) ? 'rgba(63,185,80,0.55)' : 'rgba(63,185,80,0.18)';
+  });
+  chartTrend.data.datasets[0].borderColor = chrono.map(m => {
+    const idx = MONTHS_DATA.indexOf(m);
+    return (selectedMonths.size === 0 || selectedSet.has(idx)) ? '#3fb950' : 'rgba(63,185,80,0.3)';
+  });
+  chartTrend.update();
+
+  const totals     = aggregateCats(monthIndices);
+  const active     = getActiveCatNames();
+  const sortedCats = active.slice().sort((a,b) => (totals[b]||0) - (totals[a]||0));
+  chartCats.data.labels = sortedCats;
+  chartCats.data.datasets[0].data            = sortedCats.map(n => totals[n] || 0);
+  chartCats.data.datasets[0].backgroundColor = sortedCats.map(catBg);
+  chartCats.data.datasets[0].borderColor     = sortedCats.map(catColor);
+  chartCats.update();
+}
+
+// ── Pills ──
+function populateMonthPills() {
+  const c = document.getElementById('month-pills');
+  const a = document.createElement('button');
+  a.className = 'filter-pill all-pill active'; a.id = 'month-all';
+  a.textContent = 'All months'; a.onclick = () => onMonthPill(-1);
+  c.appendChild(a);
+  MONTHS_DATA.forEach((m, idx) => {
+    const b = document.createElement('button');
+    b.className = 'filter-pill'; b.dataset.monthIdx = idx;
+    b.textContent = m.label; b.onclick = () => onMonthPill(idx);
+    c.appendChild(b);
+  });
+}
+
+function populateCatPills() {
+  const c = document.getElementById('cat-pills');
+  const a = document.createElement('button');
+  a.className = 'filter-pill all-pill active'; a.id = 'cat-all';
+  a.textContent = 'All categories'; a.onclick = () => onCatPill(null);
+  c.appendChild(a);
+  getAllCatNames().forEach(name => {
+    const b = document.createElement('button');
+    b.className = 'filter-pill'; b.dataset.cat = name;
+    const dot = document.createElement('span');
+    dot.className = 'cat-dot'; dot.style.background = catColor(name);
+    b.appendChild(dot); b.appendChild(document.createTextNode(name));
+    b.onclick = () => onCatPill(name);
+    c.appendChild(b);
+  });
+}
+
+function onMonthPill(idx) {
+  if (idx === -1) { selectedMonths.clear(); }
+  else { selectedMonths.has(idx) ? selectedMonths.delete(idx) : selectedMonths.add(idx); }
+  document.getElementById('month-all').classList.toggle('active', selectedMonths.size === 0);
+  document.querySelectorAll('#month-pills .filter-pill[data-month-idx]').forEach(p =>
+    p.classList.toggle('active', selectedMonths.has(parseInt(p.dataset.monthIdx)))
+  );
+  render();
+}
+
+function onCatPill(name) {
+  if (!name) { selectedCats.clear(); }
+  else { selectedCats.has(name) ? selectedCats.delete(name) : selectedCats.add(name); }
+  document.getElementById('cat-all').classList.toggle('active', selectedCats.size === 0);
+  document.querySelectorAll('#cat-pills .filter-pill[data-cat]').forEach(p =>
+    p.classList.toggle('active', selectedCats.has(p.dataset.cat))
+  );
+  render();
+}
+
+function resetFilters() {
+  selectedMonths.clear(); selectedCats.clear();
+  document.getElementById('month-all').classList.add('active');
+  document.getElementById('cat-all').classList.add('active');
+  document.querySelectorAll('#month-pills .filter-pill[data-month-idx]').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('#cat-pills .filter-pill[data-cat]').forEach(p => p.classList.remove('active'));
+  render();
+}
+
+// ── Main render ──
+function render() {
+  const mi = getMonthIndices();
+  renderKPIs(mi);
+  renderTable(mi);
+  updateCharts(mi);
+  document.getElementById('updated-label').textContent = 'Data updated: ' + DATA_UPDATED;
+}
+
+// ── Clock ──
+(function tick() {
+  const n = new Date();
+  document.getElementById('clock').textContent =
+    n.toLocaleDateString('en-IE',{weekday:'short',day:'numeric',month:'short'}) + ' · ' +
+    n.toLocaleTimeString('en-IE',{hour:'2-digit',minute:'2-digit'});
+  setTimeout(tick, 15000);
+})();
+
+document.getElementById('footer-year').textContent = new Date().getFullYear() + ' · Leevin-CXHome-Hub';
+populateMonthPills();
+populateCatPills();
+initCharts();
+render();
+
+// ── Network background (green palette) ──
+(function(){
+  const cv=document.getElementById('bg-canvas'),ctx=cv.getContext('2d');
+  const N=70,DIST=180,SPD=0.3;
+  let W,H,nodes,t=0;
+  const PAL=[[63,185,80],[57,208,208],[86,211,100],[88,166,255],[56,211,130]];
+  function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight;}
+  function mk(){const c=PAL[Math.floor(Math.random()*PAL.length)];return{x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*SPD,vy:(Math.random()-.5)*SPD,r:Math.random()*2.5+1.2,color:c,phase:Math.random()*Math.PI*2};}
+  function frame(){
+    ctx.clearRect(0,0,W,H);t+=0.018;
+    for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){
+      const dx=nodes[i].x-nodes[j].x,dy=nodes[i].y-nodes[j].y,d=Math.sqrt(dx*dx+dy*dy);
+      if(d<DIST){const a=(1-d/DIST)*0.55,c1=nodes[i].color,c2=nodes[j].color;
+        ctx.strokeStyle=`rgba(${(c1[0]+c2[0])>>1},${(c1[1]+c2[1])>>1},${(c1[2]+c2[2])>>1},${a})`;
+        ctx.lineWidth=0.9;ctx.beginPath();ctx.moveTo(nodes[i].x,nodes[i].y);ctx.lineTo(nodes[j].x,nodes[j].y);ctx.stroke();}
+    }
+    for(const n of nodes){
+      const p=1+0.35*Math.sin(t+n.phase),[r,g,b]=n.color,gR=n.r*p*4.5;
+      const gr=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,gR);
+      gr.addColorStop(0,`rgba(${r},${g},${b},0.55)`);gr.addColorStop(0.4,`rgba(${r},${g},${b},0.18)`);gr.addColorStop(1,`rgba(${r},${g},${b},0)`);
+      ctx.beginPath();ctx.arc(n.x,n.y,gR,0,Math.PI*2);ctx.fillStyle=gr;ctx.fill();
+      ctx.beginPath();ctx.arc(n.x,n.y,n.r*p*0.85,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${r},${g},${b},0.95)`;ctx.shadowColor=`rgba(${r},${g},${b},0.9)`;ctx.shadowBlur=10;ctx.fill();ctx.shadowBlur=0;
+      n.x+=n.vx;n.y+=n.vy;if(n.x<0||n.x>W)n.vx*=-1;if(n.y<0||n.y>H)n.vy*=-1;
+    }
+    requestAnimationFrame(frame);
+  }
+  window.addEventListener('resize',resize);resize();
+  nodes=Array.from({length:N},mk);frame();
+})();
+</script>
+</body>
+</html>

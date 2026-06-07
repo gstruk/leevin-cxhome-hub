@@ -4,21 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Leevin-CXHome-Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg:       #0d1117;
-    --surface:  #161b22;
-    --surface2: #21262d;
-    --border:   #30363d;
-    --text:     #e6edf3;
-    --muted:    #7d8590;
-    --accent:   #7c6af7;
-    --accent2:  #9b8ff9;
-    --green:    #3fb950;
-    --blue:     #58a6ff;
-    --orange:   #f0883e;
+    --bg:       #080b14;
+    --surface:  rgba(14,17,28,0.72);
+    --surface2: rgba(20,24,38,0.85);
+    --border:   rgba(255,255,255,0.07);
+    --border-h: rgba(45,212,191,0.3);
+    --text:     #e8e8e8;
+    --muted:    #6b7280;
+    --teal:     #2dd4bf;
   }
 
   html, body { height: 100%; }
@@ -26,7 +26,7 @@
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -39,18 +39,18 @@
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    opacity: 0.72;
   }
 
   header, main, footer { position: relative; z-index: 1; }
 
   /* ── Header ── */
   header {
-    background: rgba(22,27,34,0.88);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border);
+    background: rgba(10,12,20,0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
     padding: 0 32px;
-    height: 62px;
+    height: 60px;
     display: flex; align-items: center; justify-content: space-between;
     position: sticky; top: 0; z-index: 10;
   }
@@ -58,26 +58,31 @@
   .header-brand { display: flex; align-items: center; gap: 12px; }
 
   .header-icon {
-    width: 34px; height: 34px;
-    background: linear-gradient(135deg, var(--accent), var(--blue));
-    border-radius: 9px;
+    width: 32px; height: 32px;
+    background: rgba(45,212,191,0.1);
+    border: 1px solid rgba(45,212,191,0.22);
+    border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.05rem;
-    box-shadow: 0 0 16px rgba(124,106,247,0.4);
+    color: var(--teal);
   }
+  .header-icon svg { width: 16px; height: 16px; }
 
-  .header-brand span { font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; }
-  .header-brand small { font-size: 0.7rem; color: var(--muted); display: block; margin-top: -1px; }
-  .header-time { font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .header-brand-text strong { font-size: 0.92rem; font-weight: 700; letter-spacing: -0.01em; color: var(--text); display: block; }
+  .header-brand-text small  { font-size: 0.68rem; color: var(--muted); font-weight: 400; }
+
+  .header-right { display: flex; align-items: center; gap: 14px; }
+  .header-time  { font-size: 0.73rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .user-email   { font-size: 0.7rem; color: var(--muted); }
+
   .auth-btn {
     display: inline-flex; align-items: center; gap: 6px;
-    color: var(--muted); font-size: 0.75rem; font-weight: 500;
+    color: var(--muted); font-size: 0.72rem; font-weight: 500;
     padding: 5px 11px; border-radius: 7px;
-    border: 1px solid var(--border); background: transparent; cursor: pointer;
-    transition: color .15s, border-color .15s, background .15s;
+    border: 1px solid rgba(255,255,255,0.08); background: transparent; cursor: pointer;
+    font-family: inherit;
+    transition: color .15s, border-color .15s;
   }
-  .auth-btn:hover { color: #f85149; border-color: #f85149; background: rgba(248,81,73,0.07); }
-  .user-email { font-size: 0.72rem; color: var(--muted); }
+  .auth-btn:hover { color: #f87171; border-color: rgba(248,113,113,0.32); }
 
   /* ── Main layout ── */
   main {
@@ -92,96 +97,94 @@
 
   .section-header {
     display: flex; align-items: center; gap: 12px;
-    margin-bottom: 18px;
+    margin-bottom: 20px;
   }
 
   .section-header h2 {
-    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.09em;
+    font-size: 0.68rem; font-weight: 500; letter-spacing: 0.1em;
     text-transform: uppercase; color: var(--muted); white-space: nowrap;
   }
 
   .section-header::after {
-    content: ''; flex: 1; height: 1px; background: var(--border);
+    content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.05);
   }
 
   /* ── Dashboard cards ── */
   .cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 340px));
-    gap: 20px; justify-content: center;
+    gap: 16px; justify-content: center;
   }
-
-  /* Per-card color identities (RGB triplet for rgba() usage) */
-  .card-facilities { --c: 240,136,62;  --ch: #f0883e; --ch2: #f9a86a; }
-  .card-cx         { --c: 124,106,247; --ch: #7c6af7; --ch2: #9b8ff9; }
-  .card-property   { --c: 88,166,255;  --ch: #58a6ff; --ch2: #79baff; }
-  .card-collection { --c: 63,185,80;   --ch: #3fb950; --ch2: #56d364; }
-  .card-sales      { --c: 57,208,208;  --ch: #39d0d0; --ch2: #5fe0e0; }
 
   .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 28px 26px 24px;
+    background: rgba(14,17,28,0.72);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px;
+    padding: 24px 22px 20px;
     display: flex; flex-direction: column; gap: 10px;
-    transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s, background 0.2s;
-    position: relative; overflow: hidden;
-  }
-
-  /* Top accent stripe — faint always-on, vivid on hover */
-  .card::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, rgba(var(--c),1), rgba(var(--c),0.35));
-    opacity: 0.35; transition: opacity 0.2s;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    position: relative;
   }
 
   .card.active { cursor: pointer; }
   .card.active:hover {
-    border-color: rgba(var(--c), 0.7);
-    transform: translateY(-3px);
-    box-shadow: 0 12px 40px rgba(var(--c), 0.18);
-    background: linear-gradient(160deg, rgba(var(--c),0.06) 0%, var(--surface) 60%);
+    border-color: var(--border-h);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(45,212,191,0.07);
   }
-  .card.active:hover::before { opacity: 1; }
-  .card.coming-soon { opacity: 0.62; }
+
+  .card.coming-soon { opacity: 0.48; }
 
   .card-icon {
-    width: 46px; height: 46px; border-radius: 12px;
+    width: 40px; height: 40px; border-radius: 10px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 1.35rem; margin-bottom: 2px;
-    background: rgba(var(--c), 0.13);
+    background: #1a1e2e;
+    color: #8892b0;
+    margin-bottom: 2px;
+    flex-shrink: 0;
   }
+  .card-icon svg { width: 18px; height: 18px; }
 
-  .card-title { font-size: 1.05rem; font-weight: 700; }
-  .card-desc  { color: var(--muted); font-size: 0.83rem; line-height: 1.65; flex: 1; }
+  .card-title { font-size: 0.92rem; font-weight: 600; color: var(--text); }
+  .card-desc  { color: var(--muted); font-size: 0.8rem; line-height: 1.65; flex: 1; }
 
   .card-meta {
     display: flex; align-items: center; gap: 6px;
-    font-size: 0.72rem; color: var(--muted);
+    font-size: 0.7rem; color: var(--muted);
   }
 
-  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
-  .dot.off { background: var(--border); }
+  .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--teal);
+    box-shadow: 0 0 6px rgba(45,212,191,0.55);
+    flex-shrink: 0;
+  }
+  .dot.off { background: rgba(255,255,255,0.14); box-shadow: none; }
+  .live-text { color: var(--teal); }
 
   .card-badge {
     display: inline-block;
-    background: rgba(var(--c), 0.1); border: 1px solid rgba(var(--c), 0.3);
-    color: var(--ch); font-size: 0.68rem; font-weight: 600;
-    padding: 3px 9px; border-radius: 20px;
-    letter-spacing: 0.04em; text-transform: uppercase; width: fit-content;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.09);
+    color: var(--muted); font-size: 0.66rem; font-weight: 500;
+    padding: 3px 8px; border-radius: 4px;
+    letter-spacing: 0.08em; text-transform: uppercase; width: fit-content;
   }
 
   .card-link {
     display: inline-flex; align-items: center; gap: 6px;
-    background: var(--ch); color: #fff; border: none;
-    padding: 9px 16px; border-radius: 8px;
-    font-size: 0.82rem; font-weight: 600; cursor: pointer;
+    background: #ffffff; color: #0f1117;
+    border: none; padding: 8px 14px; border-radius: 8px;
+    font-size: 0.77rem; font-weight: 600; cursor: pointer;
+    font-family: inherit;
     text-decoration: none;
     transition: background 0.15s, transform 0.1s;
-    margin-top: 6px; width: fit-content;
+    margin-top: 4px; width: fit-content;
   }
-  .card-link:hover { background: var(--ch2); transform: translateY(-1px); }
+  .card-link:hover { background: #e2e8f0; transform: scale(1.02); }
+  .card-link svg { width: 11px; height: 11px; }
 
   /* ── Quick links ── */
   .link-groups {
@@ -191,64 +194,71 @@
   }
 
   .link-group {
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: rgba(14,17,28,0.6);
+    border: 1px solid rgba(255,255,255,0.07);
     border-radius: 12px;
     padding: 18px 20px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
 
   .link-group-title {
-    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.07em;
-    text-transform: uppercase; color: var(--accent2);
+    font-size: 0.67rem; font-weight: 500; letter-spacing: 0.09em;
+    text-transform: uppercase; color: var(--muted);
     margin-bottom: 12px; display: flex; align-items: center; gap: 7px;
   }
 
-  .link-list { display: flex; flex-direction: column; gap: 5px; }
+  .link-list { display: flex; flex-direction: column; gap: 3px; }
 
   .quick-link {
     display: flex; align-items: center; gap: 10px;
-    padding: 8px 10px; border-radius: 8px;
+    padding: 7px 10px; border-radius: 8px;
     color: var(--text); text-decoration: none;
-    transition: background 0.15s, color 0.15s;
+    transition: background 0.15s;
     border: 1px solid transparent;
   }
-  .quick-link:hover {
-    background: var(--surface2); border-color: var(--border); color: var(--accent2);
-  }
+  .quick-link:hover { background: rgba(255,255,255,0.04); }
 
   .ql-icon {
-    width: 30px; height: 30px; border-radius: 7px;
+    width: 28px; height: 28px; border-radius: 6px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 0.95rem; flex-shrink: 0; background: var(--surface2);
+    font-size: 0.82rem; flex-shrink: 0;
+    background: rgba(255,255,255,0.04);
   }
 
-  .ql-text { flex: 1; }
-  .ql-text strong { display: block; font-size: 0.82rem; font-weight: 600; }
-  .ql-text small  { font-size: 0.7rem; color: var(--muted); }
-  .ql-arrow { font-size: 0.72rem; color: var(--muted); }
+  .ql-text { flex: 1; min-width: 0; }
+  .ql-text strong { display: block; font-size: 0.79rem; font-weight: 500; color: var(--text); }
+  .ql-text small  { font-size: 0.67rem; color: var(--muted); }
+  .ql-arrow { font-size: 0.65rem; color: rgba(255,255,255,0.18); }
 
   /* ── Templates ── */
   .collapsible-btn {
     display: flex; align-items: center; justify-content: space-between;
-    width: 100%; background: var(--surface);
-    border: 1px solid var(--border); border-radius: 12px;
-    padding: 15px 20px; cursor: pointer;
-    font-size: 0.85rem; font-weight: 600; color: var(--text);
-    transition: border-color 0.15s, background 0.15s;
+    width: 100%;
+    background: rgba(14,17,28,0.6);
+    border: 1px solid rgba(255,255,255,0.07); border-radius: 12px;
+    padding: 14px 20px; cursor: pointer;
+    font-size: 0.81rem; font-weight: 500; color: var(--text);
+    font-family: inherit;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: border-color 0.15s;
     user-select: none;
   }
-  .collapsible-btn:hover { border-color: var(--accent); background: var(--surface2); }
+  .collapsible-btn:hover { border-color: rgba(255,255,255,0.13); }
   .collapsible-btn .btn-left { display: flex; align-items: center; gap: 10px; }
 
-  .chevron { transition: transform 0.25s; color: var(--muted); }
+  .chevron { transition: transform 0.25s; color: var(--muted); font-size: 0.62rem; }
   .chevron.open { transform: rotate(180deg); }
 
   .collapsible-body {
     display: none;
-    background: var(--surface);
-    border: 1px solid var(--border); border-top: none;
+    background: rgba(14,17,28,0.6);
+    border: 1px solid rgba(255,255,255,0.07); border-top: none;
     border-radius: 0 0 12px 12px;
     padding: 6px 20px 22px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
   .collapsible-body.open { display: block; }
 
@@ -260,24 +270,22 @@
 
   .tpl-link {
     display: flex; align-items: center; gap: 10px;
-    padding: 13px 14px; border-radius: 10px;
-    background: var(--surface2); border: 1px solid var(--border);
-    color: var(--text); text-decoration: none; font-size: 0.82rem; font-weight: 500;
-    transition: border-color 0.15s, transform 0.1s, box-shadow 0.15s;
+    padding: 12px 14px; border-radius: 8px;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+    color: var(--text); text-decoration: none; font-size: 0.79rem; font-weight: 500;
+    transition: border-color 0.15s, background 0.15s;
   }
-  .tpl-link:hover {
-    border-color: var(--accent); transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(124,106,247,0.12); color: var(--accent2);
-  }
-  .tpl-icon  { font-size: 1.1rem; }
+  .tpl-link:hover { border-color: rgba(255,255,255,0.13); background: rgba(255,255,255,0.05); }
+  .tpl-icon  { font-size: 0.95rem; }
   .tpl-label { flex: 1; }
-  .tpl-arrow { font-size: 0.7rem; color: var(--muted); }
+  .tpl-arrow { font-size: 0.62rem; color: var(--muted); }
 
   /* ── Footer ── */
   footer {
     text-align: center; padding: 18px;
-    color: var(--muted); font-size: 0.73rem;
-    border-top: 1px solid var(--border);
+    color: rgba(255,255,255,0.16); font-size: 0.68rem;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    position: relative; z-index: 1;
   }
 
   /* ── Responsive ── */
@@ -324,13 +332,18 @@
 <!-- ── Header ── -->
 <header>
   <div class="header-brand">
-    <div class="header-icon">🏠</div>
-    <div>
-      <span>Leevin-CXHome-Hub</span>
+    <div class="header-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/>
+        <path d="M9 21V12h6v9"/>
+      </svg>
+    </div>
+    <div class="header-brand-text">
+      <strong>Leevin-CXHome-Hub</strong>
       <small>Operations Centre</small>
     </div>
   </div>
-  <div style="display:flex;align-items:center;gap:14px;">
+  <div class="header-right">
     <span class="user-email" id="user-email"></span>
     <button class="auth-btn" onclick="doSignOut()">Sign out</button>
     <div class="header-time" id="clock"></div>
@@ -344,49 +357,75 @@
     <div class="section-header"><h2>Operations Dashboards</h2></div>
     <div class="cards">
 
-      <div class="card active card-facilities" onclick="window.open('https://gstruk.github.io/fixflo-leevinhome-dashboard/','_blank')">
-        <div class="card-icon">🔧</div>
+      <div class="card active" onclick="window.open('https://gstruk.github.io/fixflo-leevinhome-dashboard/','_blank')">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+          </svg>
+        </div>
         <div class="card-title">Facilities</div>
         <div class="card-desc">Maintenance tickets, appliance repairs, team assignments and SLA tracking across all managed properties.</div>
-        <div class="card-meta"><span class="dot"></span> Live on GitHub Pages</div>
+        <div class="card-meta"><span class="dot"></span><span class="live-text">Live</span></div>
         <a class="card-link" href="https://gstruk.github.io/fixflo-leevinhome-dashboard/" target="_blank" onclick="event.stopPropagation()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           Open Dashboard
         </a>
       </div>
 
-      <div class="card active card-cx" onclick="window.open('https://gstruk.github.io/leevin-cxhome-hub/cx-team.html','_blank')">
-        <div class="card-icon">👥</div>
+      <div class="card active" onclick="window.open('https://gstruk.github.io/leevin-cxhome-hub/cx-team.html','_blank')">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        </div>
         <div class="card-title">CX Team</div>
         <div class="card-desc">Agent performance metrics, ticket volumes, resolution rates and reopened % by location — Freshdesk YTD 2026.</div>
-        <div class="card-meta"><span class="dot"></span> Live on GitHub Pages</div>
+        <div class="card-meta"><span class="dot"></span><span class="live-text">Live</span></div>
         <a class="card-link" href="https://gstruk.github.io/leevin-cxhome-hub/cx-team.html" target="_blank" onclick="event.stopPropagation()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           Open Dashboard
         </a>
       </div>
 
-      <div class="card coming-soon card-property">
-        <div class="card-icon">🏢</div>
+      <div class="card coming-soon">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>
+          </svg>
+        </div>
         <div class="card-title">Property Management</div>
         <div class="card-desc">Portfolio overview, occupancy rates, license agreement tracking and property health across all managed units.</div>
         <div class="card-meta"><span class="dot off"></span> Not yet available</div>
         <span class="card-badge">Coming Soon</span>
       </div>
 
-      <div class="card active card-collection" onclick="window.open('https://gstruk.github.io/leevin-cxhome-hub/collection.html','_blank')">
-        <div class="card-icon">💰</div>
+      <div class="card active" onclick="window.open('https://gstruk.github.io/leevin-cxhome-hub/collection.html','_blank')">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="1" x2="12" y2="23"/>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+        </div>
         <div class="card-title">Collection</div>
         <div class="card-desc">Room fee revenue by category — Cleaning, Late Payment, Replacement, Penalty and Maintenance — with monthly trend and MoM change.</div>
-        <div class="card-meta"><span class="dot"></span> Live on GitHub Pages</div>
+        <div class="card-meta"><span class="dot"></span><span class="live-text">Live</span></div>
         <a class="card-link" href="https://gstruk.github.io/leevin-cxhome-hub/collection.html" target="_blank" onclick="event.stopPropagation()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           Open Dashboard
         </a>
       </div>
 
-      <div class="card coming-soon card-sales">
-        <div class="card-icon">📈</div>
+      <div class="card coming-soon">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+            <polyline points="17 6 23 6 23 12"/>
+          </svg>
+        </div>
         <div class="card-title">Sales Team</div>
         <div class="card-desc">Room available pipeline, lead tracking, conversion rates and revenue performance across the sales team.</div>
         <div class="card-meta"><span class="dot off"></span> Not yet available</div>
@@ -514,7 +553,7 @@
             <div class="ql-text"><strong>Leevin IT Support</strong><small>Internal IT helpdesk</small></div>
             <span class="ql-arrow">↗</span>
           </a>
-<a class="quick-link" href="https://docs.google.com/spreadsheets/d/1Z_WXZmPMperrIaNZC05f2BHSNmIgbfiWgWBNItNogjw/edit?gid=1738620916#gid=1738620916" target="_blank">
+          <a class="quick-link" href="https://docs.google.com/spreadsheets/d/1Z_WXZmPMperrIaNZC05f2BHSNmIgbfiWgWBNItNogjw/edit?gid=1738620916#gid=1738620916" target="_blank">
             <div class="ql-icon">⏳</div>
             <div class="ql-text"><strong>Collection Pendencias</strong><small>Pending collections tracker</small></div>
             <span class="ql-arrow">↗</span>
@@ -619,20 +658,21 @@
     btn.style.borderRadius = open ? '12px 12px 0 0' : '12px';
   }
 
-  /* ── Network background ── */
+  /* ── Network background — teal, sparse, slow ── */
   (function () {
     const cv  = document.getElementById('bg-canvas');
     const ctx = cv.getContext('2d');
-    const N   = 70, DIST = 180, SPD = 0.3;
+    const N   = 38;
+    const DIST = 220;
+    const SPD  = 0.16;
     let W, H, nodes, t = 0;
 
-    // Node color palette: purple, blue, cyan, violet
     const PALETTE = [
-      [124, 106, 247],  // purple
-      [ 88, 166, 255],  // blue
-      [ 56, 211, 203],  // cyan
-      [155, 143, 249],  // violet
-      [ 79, 172, 254],  // sky blue
+      [45, 212, 191],  // teal
+      [56, 189, 248],  // sky
+      [34, 211, 238],  // cyan
+      [52, 211, 153],  // emerald
+      [45, 212, 191],  // teal (weighted)
     ];
 
     function resize() { W = cv.width = innerWidth; H = cv.height = innerHeight; }
@@ -644,31 +684,26 @@
         y:  Math.random() * H,
         vx: (Math.random() - .5) * SPD,
         vy: (Math.random() - .5) * SPD,
-        r:  Math.random() * 2.5 + 1.2,
+        r:  Math.random() * 1.2 + 2.2,
         color,
-        phase: Math.random() * Math.PI * 2,  // for pulse
+        phase: Math.random() * Math.PI * 2,
       };
     }
 
     function frame() {
       ctx.clearRect(0, 0, W, H);
-      t += 0.018;
+      t += 0.007;
 
-      // Draw lines
+      // Lines
       for (let i = 0; i < N; i++) {
         for (let j = i + 1; j < N; j++) {
           const dx = nodes[i].x - nodes[j].x;
           const dy = nodes[i].y - nodes[j].y;
           const d  = Math.sqrt(dx*dx + dy*dy);
           if (d < DIST) {
-            const alpha = (1 - d / DIST) * 0.55;
-            // Blend color between the two node colors
-            const c1 = nodes[i].color, c2 = nodes[j].color;
-            const r  = (c1[0] + c2[0]) >> 1;
-            const g  = (c1[1] + c2[1]) >> 1;
-            const b  = (c1[2] + c2[2]) >> 1;
-            ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
-            ctx.lineWidth   = 0.9;
+            const alpha = (1 - d / DIST) * 0.12;
+            ctx.strokeStyle = `rgba(45,212,191,${alpha})`;
+            ctx.lineWidth   = 0.65;
             ctx.beginPath();
             ctx.moveTo(nodes[i].x, nodes[i].y);
             ctx.lineTo(nodes[j].x, nodes[j].y);
@@ -677,28 +712,26 @@
         }
       }
 
-      // Draw nodes with glow
+      // Nodes
       for (const n of nodes) {
-        const pulse = 1 + 0.35 * Math.sin(t + n.phase);
+        const pulse = 1 + 0.18 * Math.sin(t + n.phase);
         const [r, g, b] = n.color;
-        const glowR = n.r * pulse * 4.5;
+        const glowR = n.r * pulse * 5;
 
-        // Outer glow
         const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, glowR);
-        grad.addColorStop(0,   `rgba(${r},${g},${b},0.55)`);
-        grad.addColorStop(0.4, `rgba(${r},${g},${b},0.18)`);
+        grad.addColorStop(0,   `rgba(${r},${g},${b},0.25)`);
+        grad.addColorStop(0.5, `rgba(${r},${g},${b},0.06)`);
         grad.addColorStop(1,   `rgba(${r},${g},${b},0)`);
         ctx.beginPath();
         ctx.arc(n.x, n.y, glowR, 0, Math.PI * 2);
         ctx.fillStyle = grad;
         ctx.fill();
 
-        // Core dot
         ctx.beginPath();
         ctx.arc(n.x, n.y, n.r * pulse * 0.85, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${r},${g},${b},0.95)`;
-        ctx.shadowColor = `rgba(${r},${g},${b},0.9)`;
-        ctx.shadowBlur  = 10;
+        ctx.fillStyle = `rgba(${r},${g},${b},0.82)`;
+        ctx.shadowColor = `rgba(${r},${g},${b},0.65)`;
+        ctx.shadowBlur  = 7;
         ctx.fill();
         ctx.shadowBlur  = 0;
 

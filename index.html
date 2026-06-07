@@ -108,8 +108,15 @@
   .cards {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 340px));
-    gap: 18px; justify-content: center;
+    gap: 20px; justify-content: center;
   }
+
+  /* Per-card color identities (RGB triplet for rgba() usage) */
+  .card-facilities { --c: 240,136,62;  --ch: #f0883e; --ch2: #f9a86a; }
+  .card-cx         { --c: 124,106,247; --ch: #7c6af7; --ch2: #9b8ff9; }
+  .card-property   { --c: 88,166,255;  --ch: #58a6ff; --ch2: #79baff; }
+  .card-collection { --c: 63,185,80;   --ch: #3fb950; --ch2: #56d364; }
+  .card-sales      { --c: 57,208,208;  --ch: #39d0d0; --ch2: #5fe0e0; }
 
   .card {
     background: var(--surface);
@@ -117,33 +124,34 @@
     border-radius: 16px;
     padding: 28px 26px 24px;
     display: flex; flex-direction: column; gap: 10px;
-    transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+    transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s, background 0.2s;
     position: relative; overflow: hidden;
   }
 
+  /* Top accent stripe — faint always-on, vivid on hover */
   .card::before {
     content: ''; position: absolute; top: 0; left: 0; right: 0;
     height: 3px;
-    background: linear-gradient(90deg, var(--accent), var(--blue));
-    opacity: 0; transition: opacity 0.2s;
+    background: linear-gradient(90deg, rgba(var(--c),1), rgba(var(--c),0.35));
+    opacity: 0.35; transition: opacity 0.2s;
   }
 
   .card.active { cursor: pointer; }
   .card.active:hover {
-    border-color: var(--accent);
+    border-color: rgba(var(--c), 0.7);
     transform: translateY(-3px);
-    box-shadow: 0 12px 40px rgba(124,106,247,0.15);
+    box-shadow: 0 12px 40px rgba(var(--c), 0.18);
+    background: linear-gradient(160deg, rgba(var(--c),0.06) 0%, var(--surface) 60%);
   }
   .card.active:hover::before { opacity: 1; }
-  .card.coming-soon { opacity: 0.5; }
+  .card.coming-soon { opacity: 0.62; }
 
   .card-icon {
     width: 46px; height: 46px; border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
     font-size: 1.35rem; margin-bottom: 2px;
+    background: rgba(var(--c), 0.13);
   }
-  .card.active .card-icon    { background: rgba(124,106,247,0.15); }
-  .card.coming-soon .card-icon { background: var(--surface2); }
 
   .card-title { font-size: 1.05rem; font-weight: 700; }
   .card-desc  { color: var(--muted); font-size: 0.83rem; line-height: 1.65; flex: 1; }
@@ -158,22 +166,22 @@
 
   .card-badge {
     display: inline-block;
-    background: var(--surface2); border: 1px solid var(--border);
-    color: var(--muted); font-size: 0.68rem; font-weight: 600;
-    padding: 3px 8px; border-radius: 20px;
+    background: rgba(var(--c), 0.1); border: 1px solid rgba(var(--c), 0.3);
+    color: var(--ch); font-size: 0.68rem; font-weight: 600;
+    padding: 3px 9px; border-radius: 20px;
     letter-spacing: 0.04em; text-transform: uppercase; width: fit-content;
   }
 
   .card-link {
     display: inline-flex; align-items: center; gap: 6px;
-    background: var(--accent); color: #fff; border: none;
+    background: var(--ch); color: #fff; border: none;
     padding: 9px 16px; border-radius: 8px;
     font-size: 0.82rem; font-weight: 600; cursor: pointer;
     text-decoration: none;
     transition: background 0.15s, transform 0.1s;
     margin-top: 6px; width: fit-content;
   }
-  .card-link:hover { background: var(--accent2); transform: translateY(-1px); }
+  .card-link:hover { background: var(--ch2); transform: translateY(-1px); }
 
   /* ── Quick links ── */
   .link-groups {
@@ -336,7 +344,7 @@
     <div class="section-header"><h2>Operations Dashboards</h2></div>
     <div class="cards">
 
-      <div class="card active" onclick="window.open('https://gstruk.github.io/fixflo-leevinhome-dashboard/','_blank')">
+      <div class="card active card-facilities" onclick="window.open('https://gstruk.github.io/fixflo-leevinhome-dashboard/','_blank')">
         <div class="card-icon">🔧</div>
         <div class="card-title">Facilities</div>
         <div class="card-desc">Maintenance tickets, appliance repairs, team assignments and SLA tracking across all managed properties.</div>
@@ -347,7 +355,7 @@
         </a>
       </div>
 
-      <div class="card active" onclick="window.open('https://gstruk.github.io/leevin-cxhome-hub/cx-team.html','_blank')">
+      <div class="card active card-cx" onclick="window.open('https://gstruk.github.io/leevin-cxhome-hub/cx-team.html','_blank')">
         <div class="card-icon">👥</div>
         <div class="card-title">CX Team</div>
         <div class="card-desc">Agent performance metrics, ticket volumes, resolution rates and reopened % by location — Freshdesk YTD 2026.</div>
@@ -358,7 +366,7 @@
         </a>
       </div>
 
-      <div class="card coming-soon">
+      <div class="card coming-soon card-property">
         <div class="card-icon">🏢</div>
         <div class="card-title">Property Management</div>
         <div class="card-desc">Portfolio overview, occupancy rates, license agreement tracking and property health across all managed units.</div>
@@ -366,7 +374,7 @@
         <span class="card-badge">Coming Soon</span>
       </div>
 
-      <div class="card coming-soon">
+      <div class="card coming-soon card-collection">
         <div class="card-icon">💰</div>
         <div class="card-title">Collection</div>
         <div class="card-desc">Room fee collection tracking, outstanding balances, payment status and arrears management across all units.</div>
@@ -374,7 +382,7 @@
         <span class="card-badge">Coming Soon</span>
       </div>
 
-      <div class="card coming-soon">
+      <div class="card coming-soon card-sales">
         <div class="card-icon">📈</div>
         <div class="card-title">Sales Team</div>
         <div class="card-desc">Room available pipeline, lead tracking, conversion rates and revenue performance across the sales team.</div>

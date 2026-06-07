@@ -166,11 +166,11 @@ footer{text-align:center;padding:18px;color:var(--muted);font-size:0.73rem;borde
     <div class="filter-row">
       <span class="f-label">Search</span>
       <input class="search-input" id="search-input" type="text" placeholder="Agent name…" oninput="onSearch(this.value)">
-      <span class="f-label" style="margin-left:8px;">From</span>
-      <select class="month-select" id="from-select" onchange="onMonthRange()"></select>
-      <span class="range-sep">→</span>
-      <select class="month-select" id="to-select" onchange="onMonthRange()"></select>
       <button class="reset-btn" onclick="resetFilters()">↺ Reset</button>
+    </div>
+    <div class="filter-row">
+      <span class="f-label">Month</span>
+      <div id="month-pills" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
     </div>
     <div class="filter-row">
       <span class="f-label">Location</span>
@@ -634,27 +634,40 @@ function updateCharts(filteredAgents) {
 }
 
 // ── Filter init ──
-function populateMonthDropdowns() {
-  const chrono = [...MONTHS_DATA].reverse();
-  const fs = document.getElementById('from-select');
-  const ts = document.getElementById('to-select');
-  chrono.forEach((m, ci) => {
-    const arrayIdx = MONTHS_DATA.length - 1 - ci;
-    fs.add(new Option(m.label, arrayIdx));
-    ts.add(new Option(m.label, arrayIdx));
+function populateMonthPills() {
+  const container = document.getElementById('month-pills');
+  const allBtn = document.createElement('button');
+  allBtn.className = 'filter-pill all-pill active';
+  allBtn.id = 'month-all';
+  allBtn.textContent = 'All months';
+  allBtn.onclick = () => onMonthPill(-1);
+  container.appendChild(allBtn);
+  // newest first (MONTHS_DATA[0] is most recent)
+  MONTHS_DATA.forEach((m, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-pill';
+    btn.dataset.monthIdx = idx;
+    btn.textContent = m.label;
+    btn.onclick = () => onMonthPill(idx);
+    container.appendChild(btn);
   });
-  fs.value = String(MONTHS_DATA.length - 1);
-  ts.value = '0';
 }
 
 // ── Event handlers ──
 function onSearch(v) { searchText = v.trim().toLowerCase(); render(); }
 
-function onMonthRange() {
-  let f = parseInt(document.getElementById('from-select').value);
-  let t = parseInt(document.getElementById('to-select').value);
-  if (f < t) { [f,t]=[t,f]; }
-  fromMonthIdx = f; toMonthIdx = t;
+function onMonthPill(idx) {
+  if (idx === -1) {
+    fromMonthIdx = MONTHS_DATA.length - 1;
+    toMonthIdx   = 0;
+  } else {
+    fromMonthIdx = idx;
+    toMonthIdx   = idx;
+  }
+  document.getElementById('month-all').classList.toggle('active', idx === -1);
+  document.querySelectorAll('#month-pills .filter-pill[data-month-idx]').forEach(p =>
+    p.classList.toggle('active', parseInt(p.dataset.monthIdx) === idx)
+  );
   render();
 }
 
@@ -683,12 +696,9 @@ function resetFilters() {
   searchText = ''; selectedLocs.clear(); volumeThreshold = 0;
   document.getElementById('threshold-slider').value = '0';
   document.getElementById('threshold-val').textContent = 'All';
-  document.getElementById('from-select').value = String(MONTHS_DATA.length - 1);
-  document.getElementById('to-select').value = '0';
-  fromMonthIdx = MONTHS_DATA.length - 1; toMonthIdx = 0;
   document.getElementById('loc-all').classList.add('active');
   document.querySelectorAll('.filter-pill[data-loc]').forEach(p => p.classList.remove('active'));
-  render();
+  onMonthPill(-1);
 }
 
 function sortBy(key) {
@@ -718,7 +728,7 @@ function tick() {
 tick(); setInterval(tick, 15000);
 document.getElementById('footer-year').textContent = new Date().getFullYear() + ' · Leevin-CXHome-Hub';
 
-populateMonthDropdowns();
+populateMonthPills();
 initCharts();
 render();
 

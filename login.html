@@ -58,7 +58,7 @@
 
   <div class="error" id="error-msg"></div>
   <hr class="divider">
-  <div class="footer-note">Access restricted to @leevinhome.com accounts</div>
+  <div class="footer-note">@leevinhome.com &middot; @leevinireland.com &middot; @leevingroup.com &middot; @leevinstay.com</div>
 </div>
 
 <script type="module">
@@ -94,10 +94,11 @@
     btn.textContent = 'Signing in…';
     try {
       const result = await signInWithPopup(auth, provider);
-      const email  = result.user.email || '';
-      if (!email.endsWith('@leevinhome.com')) {
+      const email   = result.user.email || '';
+      const ALLOWED = ['@leevinhome.com','@leevinireland.com','@leevingroup.com','@leevinstay.com'];
+      if (!ALLOWED.some(d => email.endsWith(d))) {
         await auth.signOut();
-        err.textContent = 'Access restricted to @leevinhome.com accounts.';
+        err.textContent = 'Access restricted to Leevin Group accounts. Please use your company email.';
         btn.classList.remove('loading');
         btn.innerHTML = GOOGLE_SVG;
         return;

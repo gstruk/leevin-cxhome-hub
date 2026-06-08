@@ -27,6 +27,7 @@
   .card-property   { --c: 88,166,255;  --ch: #58a6ff; }
   .card-collection { --c: 63,185,80;   --ch: #3fb950; }
   .card-sales      { --c: 57,208,208;  --ch: #39d0d0; }
+  .card-admins     { --c: 227,195,73;  --ch: #e3c349; }
 
   html, body { height: 100%; }
 
@@ -180,6 +181,20 @@
     letter-spacing: 0.08em; text-transform: uppercase; width: fit-content;
   }
 
+  .card-locked { opacity: 0.4; cursor: default; pointer-events: none; }
+  .card-locked .card-link  { display: none; }
+  .card-locked .card-meta  { display: none; }
+  .card-locked .lock-badge { display: inline-block !important; }
+  .lock-badge {
+    display: none;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 0.68rem; font-weight: 600;
+    background: rgba(var(--c), 0.12);
+    color: var(--ch);
+    border: 1px solid rgba(var(--c), 0.25);
+    margin-top: 6px;
+  }
+
   .card-link {
     display: inline-flex; align-items: center; gap: 6px;
     background: rgba(var(--c), 0.12);
@@ -325,6 +340,18 @@
     appId:             "1:502783167107:web:8a86641b6ef897bd0ca9b6"
   };
   const auth = getAuth(initializeApp(firebaseConfig));
+  const SUPERVISORS = new Set([
+    'marcela.oliveira@leevinhome.com',
+    'talita.santos@leevinhome.com',
+    'b.jangada@leevinhome.com',
+    'm.almeida@leevinhome.com',
+    'caren.silva@leevinhome.com',
+    'lais.ribeiro@leevingroup.com',
+    'eduardo@leevingroup.com',
+    'p.coppini@leevinhome.com',
+    'l.lacerda@leevinhome.com',
+    'g.struk@leevinhome.com',
+  ]);
   document.documentElement.style.visibility = 'hidden';
   onAuthStateChanged(auth, user => {
     if (!user) {
@@ -333,6 +360,14 @@
       document.documentElement.style.visibility = '';
       const el = document.getElementById('user-email');
       if (el) el.textContent = user.email;
+      if (!SUPERVISORS.has(user.email)) {
+        const adminCard = document.getElementById('card-admins');
+        if (adminCard) {
+          adminCard.classList.remove('active');
+          adminCard.classList.add('card-locked');
+          adminCard.removeAttribute('onclick');
+        }
+      }
     }
   });
   window.doSignOut = () => signOut(auth).then(() =>
@@ -443,6 +478,22 @@
         <div class="card-desc">Room available pipeline, lead tracking, conversion rates and revenue performance across the sales team.</div>
         <div class="card-meta"><span class="dot off"></span> Not yet available</div>
         <span class="card-badge">Coming Soon</span>
+      </div>
+
+      <div class="card active card-admins" id="card-admins" onclick="window.open('https://gstruk.github.io/leevin-cxhome-hub/cx-admins.html','_blank')">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <div class="card-title">CX Admins</div>
+        <div class="card-desc">Supervisor and management tools — team configuration, reports and admin access.</div>
+        <div class="card-meta"><span class="dot"></span><span class="live-text">Live</span></div>
+        <span class="lock-badge">🔒 Supervisors only</span>
+        <a class="card-link" href="https://gstruk.github.io/leevin-cxhome-hub/cx-admins.html" target="_blank" onclick="event.stopPropagation()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Open Dashboard
+        </a>
       </div>
 
     </div>

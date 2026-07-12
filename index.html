@@ -28,6 +28,7 @@
   .card-collection { --c: 63,185,80;   --ch: #3fb950; }
   .card-sales      { --c: 57,208,208;  --ch: #39d0d0; }
   .card-admins     { --c: 227,195,73;  --ch: #e3c349; }
+  .card-managers   { --c: 236,72,153;  --ch: #ec4899; }
 
   html, body { height: 100%; }
 
@@ -352,6 +353,14 @@
     'l.lacerda@leevinhome.com',
     'g.struk@leevinhome.com',
   ]);
+  const MANAGERS = new Set([
+    'g.struk@leevinhome.com',
+    'eduardo@leevingroup.com',
+    'p.coppini@leevinhome.com',
+    'lais.ribeiro@leevingroup.com',
+    'l.lacerda@leevinhome.com',
+    'j.yoo@leevingroup.com',
+  ]);
   document.documentElement.style.visibility = 'hidden';
   onAuthStateChanged(auth, user => {
     if (!user) {
@@ -366,6 +375,14 @@
           adminCard.classList.remove('active');
           adminCard.classList.add('card-locked');
           adminCard.removeAttribute('onclick');
+        }
+      }
+      if (!MANAGERS.has(user.email)) {
+        const managerCard = document.getElementById('card-managers');
+        if (managerCard) {
+          managerCard.classList.remove('active');
+          managerCard.classList.add('card-locked');
+          managerCard.removeAttribute('onclick');
         }
       }
     }
@@ -494,6 +511,22 @@
         <div class="card-meta"><span class="dot"></span><span class="live-text">Live</span></div>
         <span class="lock-badge">🔒 Supervisors only</span>
         <a class="card-link" href="https://gstruk.github.io/leevin-cxhome-hub/cx-admins.html" target="_blank" onclick="event.stopPropagation()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Open Dashboard
+        </a>
+      </div>
+
+      <div class="card active card-managers" id="card-managers" onclick="window.open('https://gstruk.github.io/leevin-cxhome-hub/leevin-managers.html','_blank')">
+        <div class="card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+        </div>
+        <div class="card-title">Leevin Managers</div>
+        <div class="card-desc">Manager and director tools — team overview, reports and elevated access for leadership.</div>
+        <div class="card-meta"><span class="dot"></span><span class="live-text">Live</span></div>
+        <span class="lock-badge">&#x1F512; Managers &amp; Directors only</span>
+        <a class="card-link" href="https://gstruk.github.io/leevin-cxhome-hub/leevin-managers.html" target="_blank" onclick="event.stopPropagation()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           Open Dashboard
         </a>

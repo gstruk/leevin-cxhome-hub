@@ -438,6 +438,42 @@ footer{text-align:center;padding:18px;color:rgba(255,255,255,0.16);font-size:0.6
 @media(max-width:600px){.cr-section-wrap{padding:0 14px 60px}}
 </style>
 
+<style>
+/* CR Dashboard — operational zone (Prompt 2) */
+.cr-alert-strip{display:flex;align-items:center;gap:8px;background:rgba(248,81,73,0.07);border:1px solid rgba(248,81,73,0.18);border-radius:8px;padding:9px 14px;margin-bottom:16px;font-size:0.8rem;color:#e8e8e8}
+.cr-alert-dot{width:7px;height:7px;border-radius:50%;background:#f85149;flex-shrink:0;box-shadow:0 0 6px rgba(248,81,73,0.5);animation:cr-pulse 2s ease-in-out infinite}
+@keyframes cr-pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.cr-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.cr-kpi-card{background:rgba(14,17,28,0.72);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px 18px;backdrop-filter:blur(8px);position:relative;overflow:hidden}
+.cr-kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#2dd4bf,rgba(45,212,191,0.05))}
+.cr-kpi-val{font-size:1.75rem;font-weight:800;color:#2dd4bf;letter-spacing:-0.04em;line-height:1;margin-bottom:5px}
+.cr-kpi-lbl{font-size:0.67rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#6b7280;margin-bottom:3px}
+.cr-kpi-sub{font-size:0.7rem;color:#6b7280}
+.cr-filter-wrap{margin-bottom:12px}
+.cr-filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;align-items:center}
+.cr-filter-row2{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.cr-filter-input,.cr-filter-select{background:rgba(20,24,38,0.85);border:1px solid rgba(255,255,255,0.07);color:#e8e8e8;padding:7px 11px;border-radius:8px;font-size:0.81rem;font-family:inherit;outline:none;transition:border-color .15s}
+.cr-filter-input{min-width:190px;flex:1}
+.cr-filter-input:focus,.cr-filter-select:focus{border-color:rgba(45,212,191,0.4)}
+.cr-filter-count{font-size:0.74rem;color:#6b7280;white-space:nowrap;margin-left:auto}
+.cr-filter-reset{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:#6b7280;font-size:0.76rem;font-weight:500;padding:6px 12px;border-radius:7px;cursor:pointer;font-family:inherit;transition:color .15s,border-color .15s}
+.cr-filter-reset:hover{color:#e8e8e8;border-color:rgba(255,255,255,0.22)}
+.cr-tbl-wrap{background:rgba(14,17,28,0.72);border:1px solid rgba(255,255,255,0.07);border-radius:12px;overflow:hidden;backdrop-filter:blur(8px)}
+.cr-tbl{width:100%;border-collapse:collapse;font-size:0.8rem}
+.cr-tbl thead th{background:rgba(255,255,255,0.02);padding:9px 12px;text-align:left;font-size:0.64rem;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#6b7280;border-bottom:1px solid rgba(255,255,255,0.07)}
+.cr-tbl tbody tr{border-bottom:1px solid rgba(255,255,255,0.04);transition:background .1s}
+.cr-tbl tbody tr:hover{background:rgba(255,255,255,0.02)}
+.cr-tbl td{padding:9px 12px;vertical-align:middle}
+.cr-td-r,.cr-th-r{text-align:right}
+.cr-td-c,.cr-th-c{text-align:center}
+.cr-amount{font-variant-numeric:tabular-nums;font-weight:600}
+.cr-mono{font-family:monospace;font-size:0.77rem;color:#6b7280}
+.cr-tier-badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:4px;font-size:0.67rem;font-weight:700;letter-spacing:0.04em;border:1px solid transparent}
+.cr-empty-row td{text-align:center;padding:52px 20px;color:#6b7280;font-size:0.85rem}
+@media(max-width:1100px){.cr-kpi-row{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.cr-kpi-row{grid-template-columns:1fr 1fr}.cr-tbl{font-size:0.74rem}}
+</style>
+
 <div id="cr-dashboard">
   <div class="cr-section-wrap">
     <div class="cr-section-head">
@@ -455,7 +491,99 @@ footer{text-align:center;padding:18px;color:rgba(255,255,255,0.16);font-size:0.6
       <div class="cr-error-title">Could not load collection data</div>
       <div class="cr-error-detail" id="cr-error-msg">Check that data/collection-data.csv exists in the repo.</div>
     </div>
-    <div id="cr-content" style="display:none"><!-- UI populated in Prompt 2 --></div>
+    <div id="cr-content" style="display:none">
+
+      <!-- Task 5: Daily alerts strip -->
+      <div class="cr-alert-strip" id="cr-alert-strip" style="display:none">
+        <div class="cr-alert-dot"></div>
+        <span id="cr-alert-text"></span>
+      </div>
+
+      <!-- Task 1: KPI cards -->
+      <div class="cr-kpi-row">
+        <div class="cr-kpi-card">
+          <div class="cr-kpi-val" id="cr-kpi-outstanding">—</div>
+          <div class="cr-kpi-lbl">Total Outstanding</div>
+          <div class="cr-kpi-sub" id="cr-kpi-outstanding-sub"></div>
+        </div>
+        <div class="cr-kpi-card">
+          <div class="cr-kpi-val" id="cr-kpi-overdue">—</div>
+          <div class="cr-kpi-lbl">Overdue Amount</div>
+          <div class="cr-kpi-sub" id="cr-kpi-overdue-sub"></div>
+        </div>
+        <div class="cr-kpi-card">
+          <div class="cr-kpi-val" id="cr-kpi-collected">—</div>
+          <div class="cr-kpi-lbl">Collected This Month</div>
+          <div class="cr-kpi-sub" id="cr-kpi-collected-sub"></div>
+        </div>
+        <div class="cr-kpi-card">
+          <div class="cr-kpi-val" id="cr-kpi-rate">—</div>
+          <div class="cr-kpi-lbl">Collection Rate</div>
+          <div class="cr-kpi-sub" id="cr-kpi-rate-sub"></div>
+        </div>
+      </div>
+
+      <!-- Task 4: Filter bar -->
+      <div class="cr-filter-wrap">
+        <div class="cr-filter-row">
+          <input class="cr-filter-input" id="cr-f-search" placeholder="Search customer ID&hellip;" oninput="cr_debounceSearch()">
+          <select class="cr-filter-select" id="cr-f-tier" onchange="cr_renderTable()">
+            <option value="">All Risk Tiers</option>
+            <option value="A">Risk A &mdash; High</option>
+            <option value="B">Risk B &mdash; Medium</option>
+            <option value="C">Risk C &mdash; Low</option>
+          </select>
+          <select class="cr-filter-select" id="cr-f-property" onchange="cr_renderTable()"><option value="">All Properties</option></select>
+          <select class="cr-filter-select" id="cr-f-city"     onchange="cr_renderTable()"><option value="">All Cities</option></select>
+          <select class="cr-filter-select" id="cr-f-brand"    onchange="cr_renderTable()"><option value="">All Brands</option></select>
+          <select class="cr-filter-select" id="cr-f-status"   onchange="cr_renderTable()"><option value="">All Statuses</option></select>
+          <select class="cr-filter-select" id="cr-f-item-type" onchange="cr_renderTable()">
+            <option value="">All Item Types</option>
+            <option>Room fee</option>
+            <option>Weekly fee</option>
+            <option>Deposit</option>
+            <option>Refund - Deposit</option>
+            <option>Fee - Late payment</option>
+            <option>Fee - Replacement</option>
+            <option>Fee - Penalty House Rules</option>
+            <option>Fee - Cleaning</option>
+            <option>Fee - Maintenance</option>
+            <option>Collect Bills - Bins</option>
+            <option>Collect Bills - GAS</option>
+            <option>Collect Bills - Electricity</option>
+          </select>
+        </div>
+        <div class="cr-filter-row2">
+          <select class="cr-filter-select" id="cr-f-sort" onchange="cr_renderTable()">
+            <option value="score">Highest Risk</option>
+            <option value="outstanding">Highest Outstanding</option>
+            <option value="days">Most Overdue Days</option>
+            <option value="fees">Most Fees</option>
+            <option value="id">Customer ID A&ndash;Z</option>
+          </select>
+          <span class="cr-filter-count" id="cr-filter-count"></span>
+          <button class="cr-filter-reset" onclick="cr_resetFilters()">&#10006; Reset</button>
+        </div>
+      </div>
+
+      <!-- Task 3: Customer risk table -->
+      <div class="cr-tbl-wrap">
+        <table class="cr-tbl">
+          <thead><tr>
+            <th>Customer ID</th>
+            <th>Property</th>
+            <th>City</th>
+            <th class="cr-th-r">Outstanding</th>
+            <th class="cr-th-c">Days OD</th>
+            <th class="cr-th-c">Fees</th>
+            <th>Last Payment</th>
+            <th class="cr-th-c">Risk</th>
+          </tr></thead>
+          <tbody id="cr-tbody"></tbody>
+        </table>
+      </div>
+
+    </div>
   </div>
 </div>
 
@@ -1041,6 +1169,278 @@ function cr_loadData() {
 }
 
 window.addEventListener('DOMContentLoaded', cr_loadData);
+</script>
+
+<script>
+/* ── CR Dashboard — operational zone (Prompt 2) ──────────────── */
+var cr_FEE_TYPES = [
+  'Fee - Late payment','Fee - Replacement','Fee - Penalty House Rules',
+  'Fee - Cleaning','Fee - Maintenance',
+  'Collect Bills - Bins','Collect Bills - GAS','Collect Bills - Electricity'
+];
+var cr_searchTimer = null;
+
+function cr_eur2(n) {
+  return n.toLocaleString('en-IE', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function cr_fmtDate2(d) {
+  if (!d) return '—';
+  return d.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
+}
+function cr_esc2(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* Task 2: risk tier classification */
+function cr_riskTier(outstanding, maxOverdueDays, feeCount) {
+  var score = outstanding * 0.01 + maxOverdueDays * 2 + feeCount * 10;
+  var tier;
+  if (outstanding > 0 && (maxOverdueDays > 30 || feeCount >= 2)) tier = 'A';
+  else if (outstanding > 0 && maxOverdueDays >= 1)               tier = 'B';
+  else                                                            tier = 'C';
+  return {tier: tier, score: score};
+}
+
+function cr_buildCustomerRows(rows) {
+  var custMap = {};
+  rows.forEach(function(r) {
+    var k = r.customer_id || '__unknown__';
+    if (!custMap[k]) custMap[k] = {
+      customer_id: k,
+      outstanding: 0, paid: 0, total: 0,
+      itemTypes: [], feeTypes: [],
+      maxOverdueDays: 0,
+      lastPaidDate: null, lastPaidMethod: '',
+      properties: [], cities: [], brands: [], statuses: []
+    };
+    var c = custMap[k];
+    c.outstanding += r.remaining_amount;
+    c.paid        += r.paid_amount;
+    c.total       += r.total_amount;
+    if (r.item_types && c.itemTypes.indexOf(r.item_types) === -1) c.itemTypes.push(r.item_types);
+    if (r.item_types && cr_FEE_TYPES.indexOf(r.item_types) !== -1 && c.feeTypes.indexOf(r.item_types) === -1)
+      c.feeTypes.push(r.item_types);
+    var days = cr_daysOverdue(r);
+    if (days > c.maxOverdueDays) c.maxOverdueDays = days;
+    if (r._last_paid_date && (!c.lastPaidDate || r._last_paid_date > c.lastPaidDate)) {
+      c.lastPaidDate   = r._last_paid_date;
+      c.lastPaidMethod = r.last_payment_method || '';
+    }
+    if (r.property && c.properties.indexOf(r.property) === -1) c.properties.push(r.property);
+    if (r.city     && c.cities.indexOf(r.city)         === -1) c.cities.push(r.city);
+    if (r.brand    && c.brands.indexOf(r.brand)        === -1) c.brands.push(r.brand);
+    if (r.status   && c.statuses.indexOf(r.status)     === -1) c.statuses.push(r.status);
+  });
+  return Object.keys(custMap).map(function(k) {
+    var c = custMap[k];
+    var tr = cr_riskTier(c.outstanding, c.maxOverdueDays, c.feeTypes.length);
+    return {
+      customer_id:    c.customer_id,
+      outstanding:    c.outstanding,
+      paid:           c.paid,
+      total:          c.total,
+      maxOverdueDays: c.maxOverdueDays,
+      feeCount:       c.feeTypes.length,
+      lastPaidDate:   c.lastPaidDate,
+      lastPaidMethod: c.lastPaidMethod,
+      property:       c.properties.join(', '),
+      city:           c.cities.join(', '),
+      brand:          c.brands.join(', '),
+      statuses:       c.statuses,
+      itemTypes:      c.itemTypes,
+      tier:           tr.tier,
+      score:          tr.score
+    };
+  });
+}
+
+function cr_populateFilterDropdowns() {
+  var props=[], cities=[], brands=[], statuses=[];
+  cr_allRows.forEach(function(r) {
+    if (r.property && props.indexOf(r.property)     === -1) props.push(r.property);
+    if (r.city     && cities.indexOf(r.city)        === -1) cities.push(r.city);
+    if (r.brand    && brands.indexOf(r.brand)       === -1) brands.push(r.brand);
+    if (r.status   && statuses.indexOf(r.status)    === -1) statuses.push(r.status);
+  });
+  props.sort(); cities.sort(); brands.sort(); statuses.sort();
+  function fill(id, vals) {
+    var sel = document.getElementById(id); if (!sel) return;
+    while (sel.options.length > 1) sel.remove(1);
+    vals.forEach(function(v) { var o=document.createElement('option'); o.value=o.textContent=v; sel.appendChild(o); });
+  }
+  fill('cr-f-property', props);
+  fill('cr-f-city',     cities);
+  fill('cr-f-brand',    brands);
+  fill('cr-f-status',   statuses);
+}
+
+/* Task 1: KPI cards — always reflect full dataset */
+function cr_renderKPIs() {
+  var today = new Date(); today.setHours(0,0,0,0);
+  var nowM = today.getMonth(), nowY = today.getFullYear();
+  var totalOut=0, overdueAmt=0, collectedMonth=0, totalPaid=0, totalAmt=0, overdueCount=0, collectedCount=0;
+  cr_allRows.forEach(function(r) {
+    totalOut  += r.remaining_amount;
+    totalPaid += r.paid_amount;
+    totalAmt  += r.total_amount;
+    if (r._due_date && r._due_date < today && r.remaining_amount > 0) { overdueAmt += r.remaining_amount; overdueCount++; }
+    if (r._last_paid_date && r._last_paid_date.getMonth()===nowM && r._last_paid_date.getFullYear()===nowY) {
+      collectedMonth += r.paid_amount; collectedCount++;
+    }
+  });
+  var rate = totalAmt > 0 ? (totalPaid / totalAmt * 100) : 0;
+  function setEl(id, html) { var el=document.getElementById(id); if(el) el.innerHTML=html; }
+  setEl('cr-kpi-outstanding',     '€'+cr_eur2(totalOut));
+  setEl('cr-kpi-outstanding-sub', cr_allRows.length + ' bill line item'+(cr_allRows.length!==1?'s':''));
+  setEl('cr-kpi-overdue',         '€'+cr_eur2(overdueAmt));
+  setEl('cr-kpi-overdue-sub',     overdueCount + ' overdue bill'+(overdueCount!==1?'s':''));
+  setEl('cr-kpi-collected',       '€'+cr_eur2(collectedMonth));
+  setEl('cr-kpi-collected-sub',   collectedCount + ' payment'+(collectedCount!==1?'s':'')+' this month');
+  setEl('cr-kpi-rate',            rate.toFixed(1)+'%');
+  setEl('cr-kpi-rate-sub',        '€'+cr_eur2(totalPaid)+' collected of €'+cr_eur2(totalAmt));
+}
+
+/* Task 5: Daily alerts strip */
+function cr_renderAlerts() {
+  var today = new Date(); today.setHours(0,0,0,0);
+  var nowM = today.getMonth(), nowY = today.getFullYear();
+  var custRows = cr_buildCustomerRows(cr_allRows);
+  var riskACount = custRows.filter(function(c){return c.tier==='A';}).length;
+  var overdueAmt = 0;
+  cr_allRows.forEach(function(r){
+    if (r._due_date && r._due_date < today && r.remaining_amount > 0) overdueAmt += r.remaining_amount;
+  });
+  var newFees = cr_allRows.filter(function(r){
+    return cr_FEE_TYPES.indexOf(r.item_types) !== -1 &&
+           r._due_date && r._due_date.getMonth()===nowM && r._due_date.getFullYear()===nowY;
+  }).length;
+  var strip = document.getElementById('cr-alert-strip');
+  var txt   = document.getElementById('cr-alert-text');
+  if (!strip || !txt) return;
+  if (riskACount === 0 && overdueAmt === 0) { strip.style.display='none'; return; }
+  strip.style.display = '';
+  txt.innerHTML =
+    '<strong>'+riskACount+'</strong> customer'+(riskACount!==1?'s':'')+' in Risk A' +
+    '&nbsp;&middot;&nbsp;<strong>€'+cr_eur2(overdueAmt)+'</strong> total overdue' +
+    (newFees>0 ? '&nbsp;&middot;&nbsp;<strong>'+newFees+'</strong> new fee'+(newFees!==1?'s':'')+' this month' : '');
+}
+
+function cr_tierBadge(tier) {
+  var cfg = {
+    A:{bg:'rgba(248,81,73,0.14)', color:'#f85149',bd:'rgba(248,81,73,0.3)', lbl:'Risk A'},
+    B:{bg:'rgba(240,136,62,0.14)',color:'#f0883e',bd:'rgba(240,136,62,0.3)',lbl:'Risk B'},
+    C:{bg:'rgba(45,212,191,0.12)',color:'#2dd4bf',bd:'rgba(45,212,191,0.25)',lbl:'Risk C'}
+  };
+  var c = cfg[tier]||cfg.C;
+  return '<span class="cr-tier-badge" style="background:'+c.bg+';color:'+c.color+';border-color:'+c.bd+'">'+c.lbl+'</span>';
+}
+
+/* Task 4: filtering — always against cr_allRows, never a filtered slice */
+function cr_getRowFiltered() {
+  var prop     = document.getElementById('cr-f-property').value;
+  var city     = document.getElementById('cr-f-city').value;
+  var brand    = document.getElementById('cr-f-brand').value;
+  var status   = document.getElementById('cr-f-status').value;
+  var itemType = document.getElementById('cr-f-item-type').value;
+  return cr_allRows.filter(function(r) {
+    if (prop     && r.property   !== prop)     return false;
+    if (city     && r.city       !== city)     return false;
+    if (brand    && r.brand      !== brand)    return false;
+    if (status   && r.status     !== status)   return false;
+    if (itemType && r.item_types !== itemType) return false;
+    return true;
+  });
+}
+
+function cr_renderTable() {
+  var search  = (document.getElementById('cr-f-search').value || '').toLowerCase().trim();
+  var tier    =  document.getElementById('cr-f-tier').value   || '';
+  var sortBy  =  document.getElementById('cr-f-sort').value   || 'score';
+
+  var rowFiltered = cr_getRowFiltered();            /* row-level filters (property/city/brand/status/item) */
+  var custRows    = cr_buildCustomerRows(rowFiltered); /* one entry per customer */
+
+  if (search) custRows = custRows.filter(function(c){ return c.customer_id.toLowerCase().indexOf(search) !== -1; });
+  if (tier)   custRows = custRows.filter(function(c){ return c.tier === tier; });
+
+  custRows.sort(function(a,b){
+    if (sortBy==='outstanding') return b.outstanding    - a.outstanding;
+    if (sortBy==='days')        return b.maxOverdueDays - a.maxOverdueDays;
+    if (sortBy==='fees')        return b.feeCount       - a.feeCount;
+    if (sortBy==='id')          return a.customer_id.localeCompare(b.customer_id);
+    return b.score - a.score;
+  });
+
+  /* Count: X filtered vs Y total unique customers in full dataset */
+  var countEl = document.getElementById('cr-filter-count');
+  if (countEl) {
+    var uniqueTotal = 0;
+    var _seen = {};
+    cr_allRows.forEach(function(r){ _seen[r.customer_id]=1; });
+    uniqueTotal = Object.keys(_seen).length;
+    countEl.textContent = 'Showing '+custRows.length+' of '+uniqueTotal+' customers';
+  }
+
+  /* Highlight active filter controls */
+  ['cr-f-property','cr-f-city','cr-f-brand','cr-f-status','cr-f-item-type','cr-f-tier'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.style.borderColor = el.value ? '#2dd4bf' : '';
+  });
+  var si=document.getElementById('cr-f-search');
+  if(si) si.style.borderColor = search ? '#2dd4bf' : '';
+
+  var tbody = document.getElementById('cr-tbody');
+  if (!tbody) return;
+
+  if (!custRows.length) {
+    tbody.innerHTML = '<tr class="cr-empty-row"><td colspan="8">No customers match your filters</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = custRows.map(function(c) {
+    var propTxt = c.property.length>36 ? c.property.substring(0,34)+'…' : c.property;
+    var cityTxt = c.city.length>22     ? c.city.substring(0,20)+'…'     : c.city;
+    return '<tr>'+
+      '<td class="cr-mono">'+cr_esc2(c.customer_id)+'</td>'+
+      '<td title="'+cr_esc2(c.property)+'">'+cr_esc2(propTxt)+'</td>'+
+      '<td style="color:#6b7280">'+cr_esc2(cityTxt)+'</td>'+
+      '<td class="cr-td-r cr-amount">€&nbsp;'+cr_eur2(c.outstanding)+'</td>'+
+      '<td class="cr-td-c"><strong style="color:'+(c.maxOverdueDays>30?'#f85149':c.maxOverdueDays>0?'#f0883e':'#6b7280')+'">'+c.maxOverdueDays+'d</strong></td>'+
+      '<td class="cr-td-c">'+(c.feeCount||'—')+'</td>'+
+      '<td style="color:#6b7280;font-size:0.76rem">'+cr_fmtDate2(c.lastPaidDate)+'</td>'+
+      '<td class="cr-td-c">'+cr_tierBadge(c.tier)+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+function cr_debounceSearch() {
+  clearTimeout(cr_searchTimer);
+  cr_searchTimer = setTimeout(cr_renderTable, 200);
+}
+
+function cr_resetFilters() {
+  ['cr-f-search','cr-f-tier','cr-f-property','cr-f-city','cr-f-brand','cr-f-status','cr-f-item-type'].forEach(function(id){
+    var el=document.getElementById(id); if(!el) return;
+    if(el.tagName==='INPUT') el.value=''; else el.selectedIndex=0;
+    el.style.borderColor='';
+  });
+  var s=document.getElementById('cr-f-sort'); if(s) s.selectedIndex=0;
+  cr_renderTable();
+}
+
+function cr_initDashboard() {
+  cr_populateFilterDropdowns();
+  cr_renderKPIs();
+  cr_renderAlerts();
+  cr_renderTable();
+}
+
+/* Wrap Prompt 1's cr_dataReady to also initialise the operational zone */
+var _cr_p1_dataReady = cr_dataReady;
+cr_dataReady = function() {
+  _cr_p1_dataReady();
+  cr_initDashboard();
+};
 </script>
 </body>
 </html>

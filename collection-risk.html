@@ -458,9 +458,10 @@ footer{text-align:center;padding:18px;color:rgba(255,255,255,0.16);font-size:0.6
 .cr-filter-count{font-size:0.74rem;color:#6b7280;white-space:nowrap;margin-left:auto}
 .cr-filter-reset{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:#6b7280;font-size:0.76rem;font-weight:500;padding:6px 12px;border-radius:7px;cursor:pointer;font-family:inherit;transition:color .15s,border-color .15s}
 .cr-filter-reset:hover{color:#e8e8e8;border-color:rgba(255,255,255,0.22)}
-.cr-tbl-wrap{background:rgba(14,17,28,0.72);border:1px solid rgba(255,255,255,0.07);border-radius:12px;overflow:hidden;backdrop-filter:blur(8px)}
+.cr-tbl-wrap{background:rgba(14,17,28,0.72);border:1px solid rgba(255,255,255,0.07);border-radius:12px;overflow-x:hidden;overflow-y:auto;max-height:460px;backdrop-filter:blur(8px)}
+.cr-tbl-wrap::-webkit-scrollbar{width:5px}.cr-tbl-wrap::-webkit-scrollbar-track{background:transparent}.cr-tbl-wrap::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:3px}
 .cr-tbl{width:100%;border-collapse:collapse;font-size:0.8rem}
-.cr-tbl thead th{background:rgba(255,255,255,0.02);padding:9px 12px;text-align:left;font-size:0.64rem;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#6b7280;border-bottom:1px solid rgba(255,255,255,0.07)}
+.cr-tbl thead th{background:rgba(10,13,22,0.97);padding:9px 12px;text-align:left;font-size:0.64rem;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#6b7280;border-bottom:1px solid rgba(255,255,255,0.07);position:sticky;top:0;z-index:2}
 .cr-tbl tbody tr{border-bottom:1px solid rgba(255,255,255,0.04);transition:background .1s}
 .cr-tbl tbody tr:hover{background:rgba(255,255,255,0.02)}
 .cr-tbl td{padding:9px 12px;vertical-align:middle}

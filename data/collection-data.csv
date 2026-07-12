@@ -1,0 +1,5 @@
+booking_number,bill_number,customer_id,property,brand,city,room,bed,last_paid_date,last_payment_method,due_date,item_types,item_descriptions,status,remaining_amount,paid_amount,total_amount
+BK-2026-001,BILL-2026-001,CUST-101,Leevin Porto Central,Leevin,Porto,Room 3A,Bed 1,,,2026-06-01,Room fee,"Monthly room fee, June 2026",Pending,650.00,0.00,650.00
+BK-2026-001,BILL-2026-001,CUST-101,Leevin Porto Central,Leevin,Porto,Room 3A,Bed 1,,,2026-06-01,Fee - Late payment,Late payment penalty June 2026,Pending,25.00,0.00,25.00
+BK-2026-002,BILL-2026-002,CUST-205,Leevin Lisbon West,Leevin,Lisbon,Room 7B,Bed 2,2026-06-10,Bank Transfer,2026-06-15,Weekly fee,Weekly fee June W3,Partially Paid,180.00,70.00,250.00
+BK-2026-003,BILL-2026-003,CUST-089,Leevin Porto East,Leevin Porto,Porto,Room 2C,Bed 1,,,2026-05-01,Deposit,Security deposit,Pending,500.00,0.00,500.00

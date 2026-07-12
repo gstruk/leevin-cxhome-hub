@@ -474,6 +474,19 @@ footer{text-align:center;padding:18px;color:rgba(255,255,255,0.16);font-size:0.6
 @media(max-width:600px){.cr-kpi-row{grid-template-columns:1fr 1fr}.cr-tbl{font-size:0.74rem}}
 </style>
 
+<style>
+/* CR Dashboard — strategic zone (Prompt 3) */
+.cr-strategic-divider{display:flex;align-items:center;gap:12px;margin:36px 0 20px;color:#6b7280;font-size:0.7rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase}
+.cr-strategic-divider::before,.cr-strategic-divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.07)}
+.cr-charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:40px}
+.cr-chart-card{background:rgba(14,17,28,0.72);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:18px 20px;backdrop-filter:blur(8px)}
+.cr-chart-wide{grid-column:1/-1}
+.cr-chart-name{font-size:0.78rem;font-weight:700;color:#e8e8e8;margin-bottom:2px}
+.cr-chart-desc-txt{font-size:0.68rem;color:#6b7280;margin-bottom:16px}
+.cr-chart-canvas{position:relative}
+@media(max-width:768px){.cr-charts-grid{grid-template-columns:1fr}}
+</style>
+
 <div id="cr-dashboard">
   <div class="cr-section-wrap">
     <div class="cr-section-head">
@@ -581,6 +594,48 @@ footer{text-align:center;padding:18px;color:rgba(255,255,255,0.16);font-size:0.6
           </tr></thead>
           <tbody id="cr-tbody"></tbody>
         </table>
+      </div>
+
+      <!-- Strategic zone — charts (Prompt 3) -->
+      <div class="cr-strategic-divider">Strategic Overview</div>
+      <div class="cr-charts-grid">
+
+        <div class="cr-chart-card cr-chart-wide">
+          <div class="cr-chart-name">Collection Rate Trend</div>
+          <div class="cr-chart-desc-txt">Monthly % of billed amount collected, current year</div>
+          <div class="cr-chart-canvas" style="height:220px"><canvas id="cr-chart-rate"></canvas></div>
+        </div>
+
+        <div class="cr-chart-card">
+          <div class="cr-chart-name">Revenue Breakdown</div>
+          <div class="cr-chart-desc-txt">Room fee vs deposit vs utilities by month</div>
+          <div class="cr-chart-canvas" style="height:220px"><canvas id="cr-chart-revenue"></canvas></div>
+        </div>
+
+        <div class="cr-chart-card">
+          <div class="cr-chart-name">Fee Seasonality</div>
+          <div class="cr-chart-desc-txt">Monthly late-payment &amp; penalty fee totals</div>
+          <div class="cr-chart-canvas" style="height:220px"><canvas id="cr-chart-fees"></canvas></div>
+        </div>
+
+        <div class="cr-chart-card">
+          <div class="cr-chart-name">Outstanding by City</div>
+          <div class="cr-chart-desc-txt">Current remaining balance per city</div>
+          <div class="cr-chart-canvas" style="height:220px"><canvas id="cr-chart-city"></canvas></div>
+        </div>
+
+        <div class="cr-chart-card">
+          <div class="cr-chart-name">Outstanding by Brand</div>
+          <div class="cr-chart-desc-txt">Current remaining balance per brand</div>
+          <div class="cr-chart-canvas" style="height:220px"><canvas id="cr-chart-brand"></canvas></div>
+        </div>
+
+        <div class="cr-chart-card cr-chart-wide">
+          <div class="cr-chart-name">Utilities Recovery</div>
+          <div class="cr-chart-desc-txt">Monthly billed vs collected for Gas, Electricity &amp; Bins</div>
+          <div class="cr-chart-canvas" style="height:220px"><canvas id="cr-chart-utilities"></canvas></div>
+        </div>
+
       </div>
 
     </div>
@@ -1450,6 +1505,186 @@ var _cr_p1_dataReady = cr_dataReady;
 cr_dataReady = function() {
   try { _cr_p1_dataReady(); } catch(e) { console.error('[CR P1 dataReady]', e); }
   cr_initDashboard();
+};
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+/* CR Dashboard — Strategic Zone (Prompt 3) */
+
+function cr_monthKey(row) {
+  var d = cr_parseDate(row.due_date);
+  if (!d) return null;
+  return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0');
+}
+
+function cr_monthLabel(ym) {
+  var parts = ym.split('-');
+  var d = new Date(Date.UTC(+parts[0], +parts[1] - 1, 1));
+  return d.toLocaleString('en-IE', { month: 'short', timeZone: 'UTC' }) + ' ' + parts[0].slice(2);
+}
+
+function cr_sortedMonths(keys) {
+  return keys.slice().sort();
+}
+
+var cr_chartInstances = {};
+
+function cr_destroyChart(id) {
+  if (cr_chartInstances[id]) { cr_chartInstances[id].destroy(); delete cr_chartInstances[id]; }
+}
+
+function cr_setChartDefaults() {
+  Chart.defaults.color = '#9ca3af';
+  Chart.defaults.borderColor = 'rgba(255,255,255,0.07)';
+  Chart.defaults.font.family = "'Inter','Segoe UI',sans-serif";
+  Chart.defaults.font.size = 11;
+}
+
+function cr_renderChartRate() {
+  cr_destroyChart('rate');
+  var byMonth = {};
+  cr_allRows.filter(function(r){ return r.total_amount > 0; }).forEach(function(r) {
+    var k = cr_monthKey(r); if (!k) return;
+    if (!byMonth[k]) byMonth[k] = { total: 0, remaining: 0 };
+    byMonth[k].total += r.total_amount;
+    byMonth[k].remaining += r.remaining_amount;
+  });
+  var months = cr_sortedMonths(Object.keys(byMonth));
+  if (!months.length) return;
+  var ctx = document.getElementById('cr-chart-rate'); if (!ctx) return;
+  cr_chartInstances['rate'] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: months.map(cr_monthLabel),
+      datasets: [{ label: 'Collection Rate %',
+        data: months.map(function(m){ var g=byMonth[m]; return g.total>0?Math.round((1-g.remaining/g.total)*1000)/10:0; }),
+        borderColor: '#2dd4bf', backgroundColor: 'rgba(45,212,191,0.12)',
+        fill: true, tension: 0.35, pointRadius: 3, pointHoverRadius: 5 }]
+    },
+    options: { responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:function(c){return c.raw+'%';}}} },
+      scales:{ y:{ min:0, max:100, ticks:{callback:function(v){return v+'%';}} } }
+    }
+  });
+}
+
+function cr_renderChartRevenue() {
+  cr_destroyChart('revenue');
+  var ROOM=['room fee','weekly fee'], DEP=['deposit','security deposit'],
+      UTIL=['collect bills - bins','collect bills - gas','collect bills - electricity'];
+  var byMonth = {};
+  cr_allRows.forEach(function(r) {
+    var k=cr_monthKey(r); if(!k) return;
+    if(!byMonth[k]) byMonth[k]={room:0,deposit:0,utility:0};
+    var t=(r.item_types||'').toLowerCase();
+    if(ROOM.indexOf(t)>-1) byMonth[k].room+=r.total_amount;
+    else if(DEP.indexOf(t)>-1) byMonth[k].deposit+=r.total_amount;
+    else if(UTIL.indexOf(t)>-1) byMonth[k].utility+=r.total_amount;
+  });
+  var months=cr_sortedMonths(Object.keys(byMonth)); if(!months.length) return;
+  var ctx=document.getElementById('cr-chart-revenue'); if(!ctx) return;
+  cr_chartInstances['revenue'] = new Chart(ctx, {
+    type:'bar',
+    data:{ labels:months.map(cr_monthLabel), datasets:[
+      {label:'Room/Weekly', data:months.map(function(m){return byMonth[m].room;}),    backgroundColor:'#2dd4bf', stack:'s'},
+      {label:'Deposit',     data:months.map(function(m){return byMonth[m].deposit;}), backgroundColor:'#818cf8', stack:'s'},
+      {label:'Utilities',   data:months.map(function(m){return byMonth[m].utility;}), backgroundColor:'#f0883e', stack:'s'}
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:10}}},
+      scales:{x:{stacked:true},y:{stacked:true,ticks:{callback:function(v){return '€'+v.toLocaleString();}}}}
+    }
+  });
+}
+
+function cr_renderChartFees() {
+  cr_destroyChart('fees');
+  var FEE=['fee - late payment','fee - replacement','fee - penalty house rules','fee - cleaning','fee - maintenance'];
+  var byMonth={};
+  cr_allRows.forEach(function(r){
+    var t=(r.item_types||'').toLowerCase(); if(FEE.indexOf(t)===-1) return;
+    var k=cr_monthKey(r); if(!k) return;
+    if(!byMonth[k]) byMonth[k]=0; byMonth[k]+=r.total_amount;
+  });
+  var months=cr_sortedMonths(Object.keys(byMonth)); if(!months.length) return;
+  var ctx=document.getElementById('cr-chart-fees'); if(!ctx) return;
+  cr_chartInstances['fees'] = new Chart(ctx, {
+    type:'bar',
+    data:{ labels:months.map(cr_monthLabel),
+      datasets:[{label:'Fee Total', data:months.map(function(m){return byMonth[m];}), backgroundColor:'#f85149', borderRadius:4}]
+    },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{y:{ticks:{callback:function(v){return '€'+v.toLocaleString();}}}}
+    }
+  });
+}
+
+function cr_renderChartCityBrand() {
+  ['city','brand'].forEach(function(field) {
+    cr_destroyChart(field);
+    var byKey={};
+    cr_allRows.forEach(function(r){
+      var k=(r[field]||'').trim()||(field==='city'?'(unknown city)':'(unknown brand)');
+      if(!byKey[k]) byKey[k]=0; byKey[k]+=r.remaining_amount;
+    });
+    var sorted=Object.keys(byKey).sort(function(a,b){return byKey[b]-byKey[a];}).slice(0,10);
+    var ctx=document.getElementById('cr-chart-'+field); if(!ctx) return;
+    cr_chartInstances[field] = new Chart(ctx, {
+      type:'bar',
+      data:{ labels:sorted,
+        datasets:[{label:'Outstanding €', data:sorted.map(function(k){return byKey[k];}), backgroundColor:'#2dd4bf', borderRadius:4}]
+      },
+      options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{x:{ticks:{callback:function(v){return '€'+v.toLocaleString();}}}}
+      }
+    });
+  });
+}
+
+function cr_renderChartUtilities() {
+  cr_destroyChart('utilities');
+  var UTIL=['collect bills - bins','collect bills - gas','collect bills - electricity'];
+  var byMonth={};
+  cr_allRows.forEach(function(r){
+    var t=(r.item_types||'').toLowerCase(); if(UTIL.indexOf(t)===-1) return;
+    var k=cr_monthKey(r); if(!k) return;
+    if(!byMonth[k]) byMonth[k]={billed:0,collected:0};
+    byMonth[k].billed+=r.total_amount;
+    byMonth[k].collected+=(r.total_amount-r.remaining_amount);
+  });
+  var months=cr_sortedMonths(Object.keys(byMonth)); if(!months.length) return;
+  var ctx=document.getElementById('cr-chart-utilities'); if(!ctx) return;
+  cr_chartInstances['utilities'] = new Chart(ctx, {
+    type:'bar',
+    data:{ labels:months.map(cr_monthLabel), datasets:[
+      {label:'Billed',    data:months.map(function(m){return byMonth[m].billed;}),    backgroundColor:'rgba(45,212,191,0.25)', borderColor:'#2dd4bf', borderWidth:1},
+      {label:'Collected', data:months.map(function(m){return byMonth[m].collected;}), backgroundColor:'#2dd4bf'}
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:10}}},
+      scales:{y:{ticks:{callback:function(v){return '€'+v.toLocaleString();}}}}
+    }
+  });
+}
+
+function cr_initCharts() {
+  if (!window.Chart) { console.warn('[CR] Chart.js not loaded'); return; }
+  cr_setChartDefaults();
+  cr_renderChartRate();
+  cr_renderChartRevenue();
+  cr_renderChartFees();
+  cr_renderChartCityBrand();
+  cr_renderChartUtilities();
+}
+
+/* Wrap Prompt 2's cr_dataReady to also initialise the strategic zone */
+var _cr_p2_dataReady = cr_dataReady;
+cr_dataReady = function() {
+  try { _cr_p2_dataReady(); } catch(e) { console.error('[CR P2 dataReady]', e); }
+  cr_initCharts();
 };
 </script>
 </body>

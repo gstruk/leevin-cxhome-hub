@@ -1022,11 +1022,15 @@ var cr_headers = [];
 function cr_parseDate(s) {
   if (!s) return null;
   s = s.trim();
-  var m;
-  if ((m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/)))
-    return new Date(+m[1], +m[2]-1, +m[3]);
-  if ((m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)))
-    return new Date(+m[3], +m[2]-1, +m[1]); /* DD/MM/YYYY — European preference */
+  var m, d;
+  if ((m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/))) {
+    d = new Date(+m[1], +m[2]-1, +m[3]);
+    return (d.getFullYear()===+m[1] && d.getMonth()===+m[2]-1 && d.getDate()===+m[3]) ? d : null;
+  }
+  if ((m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/))) {
+    d = new Date(+m[3], +m[2]-1, +m[1]); /* DD/MM/YYYY — European preference */
+    return (d.getFullYear()===+m[3] && d.getMonth()===+m[2]-1 && d.getDate()===+m[1]) ? d : null;
+  }
   return null;
 }
 
@@ -1035,10 +1039,12 @@ function cr_parseAmount(s) {
   var c = String(s).replace(/[€$£\s]/g, '');
   if (c.indexOf(',') !== -1 && c.indexOf('.') !== -1)
     c = c.lastIndexOf('.') > c.lastIndexOf(',')
-      ? c.replace(/,/g, '')           /* 1,234.56 → 1234.56 */
+      ? c.replace(/,/g, '')                    /* 1,234.56 → 1234.56 */
       : c.replace(/\./g,'').replace(',','.');  /* 1.234,56 → 1234.56 */
+  else if (/,\d{1,2}$/.test(c))
+    c = c.replace(',', '.');  /* European decimal: 12,50 → 12.50 */
   else
-    c = c.replace(',', '.');
+    c = c.replace(/,/g, '');  /* thousands separator: 1,234 → 1234 */
   return parseFloat(c) || 0;
 }
 
@@ -1108,8 +1114,10 @@ function cr_groupByProperty() {
 
 function cr_daysOverdue(row) {
   if (!row._due_date) return 0;
-  var today = new Date(); today.setHours(0, 0, 0, 0);
-  var diff = Math.floor((today - row._due_date) / 86400000);
+  var n = new Date();
+  var todayUTC = Date.UTC(n.getFullYear(), n.getMonth(), n.getDate());
+  var dueUTC   = Date.UTC(row._due_date.getFullYear(), row._due_date.getMonth(), row._due_date.getDate());
+  var diff = Math.round((todayUTC - dueUTC) / 86400000);
   return diff > 0 ? diff : 0;
 }
 
@@ -1134,10 +1142,13 @@ function cr_loadData() {
       return r.text();
     })
     .then(function(text) {
+      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); /* strip UTF-8 BOM */
       var raw = cr_parseCSV(text);
       if (raw.length < 2) throw new Error('CSV has no data rows');
       cr_headers = raw[0].map(function(h) { return h.trim().toLowerCase().replace(/\s+/g, '_'); });
-      cr_allRows = raw.slice(1).map(function(cols) {
+      cr_allRows = raw.slice(1)
+        .filter(function(cols){ return cols.some(function(v){ return v.trim(); }); }) /* skip blank rows */
+        .map(function(cols) {
         var obj = {};
         cr_headers.forEach(function(h, i) { obj[h] = (cols[i] || '').trim(); });
         obj._due_date        = cr_parseDate(obj.due_date);
@@ -1179,6 +1190,7 @@ var cr_FEE_TYPES = [
   'Collect Bills - Bins','Collect Bills - GAS','Collect Bills - Electricity'
 ];
 var cr_searchTimer = null;
+var cr_uniqueTotal = 0;
 
 function cr_eur2(n) {
   return n.toLocaleString('en-IE', {minimumFractionDigits:2, maximumFractionDigits:2});
@@ -1188,7 +1200,7 @@ function cr_fmtDate2(d) {
   return d.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
 }
 function cr_esc2(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 /* Task 2: risk tier classification */
@@ -1208,7 +1220,7 @@ function cr_buildCustomerRows(rows) {
     if (!custMap[k]) custMap[k] = {
       customer_id: k,
       outstanding: 0, paid: 0, total: 0,
-      itemTypes: [], feeTypes: [],
+      itemTypes: [], feeCount: 0,
       maxOverdueDays: 0,
       lastPaidDate: null, lastPaidMethod: '',
       properties: [], cities: [], brands: [], statuses: []
@@ -1218,8 +1230,7 @@ function cr_buildCustomerRows(rows) {
     c.paid        += r.paid_amount;
     c.total       += r.total_amount;
     if (r.item_types && c.itemTypes.indexOf(r.item_types) === -1) c.itemTypes.push(r.item_types);
-    if (r.item_types && cr_FEE_TYPES.indexOf(r.item_types) !== -1 && c.feeTypes.indexOf(r.item_types) === -1)
-      c.feeTypes.push(r.item_types);
+    if (r.item_types && cr_FEE_TYPES.indexOf(r.item_types) !== -1) c.feeCount++;
     var days = cr_daysOverdue(r);
     if (days > c.maxOverdueDays) c.maxOverdueDays = days;
     if (r._last_paid_date && (!c.lastPaidDate || r._last_paid_date > c.lastPaidDate)) {
@@ -1233,14 +1244,14 @@ function cr_buildCustomerRows(rows) {
   });
   return Object.keys(custMap).map(function(k) {
     var c = custMap[k];
-    var tr = cr_riskTier(c.outstanding, c.maxOverdueDays, c.feeTypes.length);
+    var tr = cr_riskTier(c.outstanding, c.maxOverdueDays, c.feeCount);
     return {
       customer_id:    c.customer_id,
       outstanding:    c.outstanding,
       paid:           c.paid,
       total:          c.total,
       maxOverdueDays: c.maxOverdueDays,
-      feeCount:       c.feeTypes.length,
+      feeCount:       c.feeCount,
       lastPaidDate:   c.lastPaidDate,
       lastPaidMethod: c.lastPaidMethod,
       property:       c.properties.join(', '),
@@ -1265,8 +1276,10 @@ function cr_populateFilterDropdowns() {
   props.sort(); cities.sort(); brands.sort(); statuses.sort();
   function fill(id, vals) {
     var sel = document.getElementById(id); if (!sel) return;
+    var cur = sel.value;
     while (sel.options.length > 1) sel.remove(1);
     vals.forEach(function(v) { var o=document.createElement('option'); o.value=o.textContent=v; sel.appendChild(o); });
+    if (cur) sel.value = cur;
   }
   fill('cr-f-property', props);
   fill('cr-f-city',     cities);
@@ -1284,7 +1297,7 @@ function cr_renderKPIs() {
     totalPaid += r.paid_amount;
     totalAmt  += r.total_amount;
     if (r._due_date && r._due_date < today && r.remaining_amount > 0) { overdueAmt += r.remaining_amount; overdueCount++; }
-    if (r._last_paid_date && r._last_paid_date.getMonth()===nowM && r._last_paid_date.getFullYear()===nowY) {
+    if (r._last_paid_date && r._last_paid_date.getMonth()===nowM && r._last_paid_date.getFullYear()===nowY && r.remaining_amount===0) {
       collectedMonth += r.paid_amount; collectedCount++;
     }
   });
@@ -1371,15 +1384,9 @@ function cr_renderTable() {
     return b.score - a.score;
   });
 
-  /* Count: X filtered vs Y total unique customers in full dataset */
+  /* Count: X filtered vs Y total unique customers in full dataset (cached at init) */
   var countEl = document.getElementById('cr-filter-count');
-  if (countEl) {
-    var uniqueTotal = 0;
-    var _seen = {};
-    cr_allRows.forEach(function(r){ _seen[r.customer_id]=1; });
-    uniqueTotal = Object.keys(_seen).length;
-    countEl.textContent = 'Showing '+custRows.length+' of '+uniqueTotal+' customers';
-  }
+  if (countEl) countEl.textContent = 'Showing '+custRows.length+' of '+cr_uniqueTotal+' customers';
 
   /* Highlight active filter controls */
   ['cr-f-property','cr-f-city','cr-f-brand','cr-f-status','cr-f-item-type','cr-f-tier'].forEach(function(id){
@@ -1429,6 +1436,9 @@ function cr_resetFilters() {
 }
 
 function cr_initDashboard() {
+  var _seen = {};
+  cr_allRows.forEach(function(r){ _seen[r.customer_id] = 1; });
+  cr_uniqueTotal = Object.keys(_seen).length;
   cr_populateFilterDropdowns();
   cr_renderKPIs();
   cr_renderAlerts();
@@ -1438,7 +1448,7 @@ function cr_initDashboard() {
 /* Wrap Prompt 1's cr_dataReady to also initialise the operational zone */
 var _cr_p1_dataReady = cr_dataReady;
 cr_dataReady = function() {
-  _cr_p1_dataReady();
+  try { _cr_p1_dataReady(); } catch(e) { console.error('[CR P1 dataReady]', e); }
   cr_initDashboard();
 };
 </script>

@@ -487,6 +487,17 @@ footer{text-align:center;padding:18px;color:rgba(255,255,255,0.16);font-size:0.6
 @media(max-width:768px){.cr-charts-grid{grid-template-columns:1fr}}
 </style>
 
+<style>
+/* CR Dashboard — polish (Prompt 4) */
+.cr-fade-in{opacity:0;transform:translateY(10px);transition:opacity .45s ease,transform .45s ease}
+.cr-fade-in.cr-visible{opacity:1;transform:translateY(0)}
+.cr-freshness-bar{display:none;align-items:center;gap:10px;background:rgba(234,179,8,0.07);border:1px solid rgba(234,179,8,0.25);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:0.8rem;color:#e8e8e8}
+.cr-freshness-icon{color:#eab308;flex-shrink:0}
+.cr-export-btn{display:inline-flex;align-items:center;gap:5px;background:rgba(45,212,191,0.08);border:1px solid rgba(45,212,191,0.22);color:#2dd4bf;font-size:0.76rem;font-weight:600;padding:6px 12px;border-radius:7px;cursor:pointer;font-family:inherit;transition:background .15s;white-space:nowrap}
+.cr-export-btn:hover{background:rgba(45,212,191,0.16)}
+.cr-chart-empty{display:flex;align-items:center;justify-content:center;height:200px;color:#6b7280;font-size:0.82rem}
+</style>
+
 <div id="cr-dashboard">
   <div class="cr-section-wrap">
     <div class="cr-section-head">
@@ -512,8 +523,14 @@ footer{text-align:center;padding:18px;color:rgba(255,255,255,0.16);font-size:0.6
         <span id="cr-alert-text"></span>
       </div>
 
+      <!-- Data freshness indicator (Prompt 4) -->
+      <div class="cr-freshness-bar" id="cr-freshness-bar">
+        <span class="cr-freshness-icon">&#9888;</span>
+        <span id="cr-freshness-txt"></span>
+      </div>
+
       <!-- Task 1: KPI cards -->
-      <div class="cr-kpi-row">
+      <div class="cr-kpi-row cr-fade-in">
         <div class="cr-kpi-card">
           <div class="cr-kpi-val" id="cr-kpi-outstanding">—</div>
           <div class="cr-kpi-lbl">Total Outstanding</div>
@@ -575,12 +592,13 @@ footer{text-align:center;padding:18px;color:rgba(255,255,255,0.16);font-size:0.6
             <option value="id">Customer ID A&ndash;Z</option>
           </select>
           <span class="cr-filter-count" id="cr-filter-count"></span>
+          <button class="cr-export-btn" onclick="cr_exportFilteredCSV()">&#8595; Export CSV</button>
           <button class="cr-filter-reset" onclick="cr_resetFilters()">&#10006; Reset</button>
         </div>
       </div>
 
       <!-- Task 3: Customer risk table -->
-      <div class="cr-tbl-wrap">
+      <div class="cr-tbl-wrap cr-fade-in">
         <table class="cr-tbl">
           <thead><tr>
             <th>Customer ID</th>
@@ -598,7 +616,7 @@ footer{text-align:center;padding:18px;color:rgba(255,255,255,0.16);font-size:0.6
 
       <!-- Strategic zone — charts (Prompt 3) -->
       <div class="cr-strategic-divider">Strategic Overview</div>
-      <div class="cr-charts-grid">
+      <div class="cr-charts-grid cr-fade-in">
 
         <div class="cr-chart-card cr-chart-wide">
           <div class="cr-chart-name">Collection Rate Trend</div>
@@ -1685,6 +1703,92 @@ var _cr_p2_dataReady = cr_dataReady;
 cr_dataReady = function() {
   try { _cr_p2_dataReady(); } catch(e) { console.error('[CR P2 dataReady]', e); }
   cr_initCharts();
+};
+</script>
+
+<script>
+/* CR Dashboard — Polish (Prompt 4) */
+
+function cr_setupFadeIn() {
+  var els = document.querySelectorAll('.cr-fade-in');
+  if (!window.IntersectionObserver) {
+    els.forEach(function(el){ el.classList.add('cr-visible'); });
+    return;
+  }
+  var obs = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) {
+      if (e.isIntersecting) { e.target.classList.add('cr-visible'); obs.unobserve(e.target); }
+    });
+  }, { threshold: 0.06 });
+  els.forEach(function(el){ obs.observe(el); });
+}
+
+function cr_checkFreshness() {
+  var newest = null;
+  cr_allRows.forEach(function(r) {
+    if (r._last_paid_date && (!newest || r._last_paid_date > newest)) newest = r._last_paid_date;
+  });
+  if (!newest) return;
+  var n = new Date();
+  var todayUTC   = Date.UTC(n.getFullYear(), n.getMonth(), n.getDate());
+  var newestUTC  = Date.UTC(newest.getFullYear(), newest.getMonth(), newest.getDate());
+  var days = Math.round((todayUTC - newestUTC) / 86400000);
+  if (days > 7) {
+    var bar = document.getElementById('cr-freshness-bar');
+    var txt = document.getElementById('cr-freshness-txt');
+    if (bar && txt) {
+      txt.textContent = 'Data may be outdated — last payment record is ' + days + ' days old. Export a fresh CSV from BeeMyRoom and run the update script.';
+      bar.style.display = 'flex';
+    }
+  }
+}
+
+function cr_exportFilteredCSV() {
+  var search  = (document.getElementById('cr-f-search').value || '').toLowerCase().trim();
+  var tier    =  document.getElementById('cr-f-tier').value   || '';
+  var sortBy  =  document.getElementById('cr-f-sort').value   || 'score';
+
+  var rowFiltered = cr_getRowFiltered();
+  var custRows    = cr_buildCustomerRows(rowFiltered);
+  if (search) custRows = custRows.filter(function(c){ return c.customer_id.toLowerCase().indexOf(search) !== -1; });
+  if (tier)   custRows = custRows.filter(function(c){ return c.tier === tier; });
+  custRows.sort(function(a,b){
+    if (sortBy==='outstanding') return b.outstanding    - a.outstanding;
+    if (sortBy==='days')        return b.maxOverdueDays - a.maxOverdueDays;
+    if (sortBy==='fees')        return b.feeCount       - a.feeCount;
+    if (sortBy==='id')          return a.customer_id.localeCompare(b.customer_id);
+    return b.score - a.score;
+  });
+
+  if (!custRows.length) { alert('No customers match the current filters.'); return; }
+
+  function q(v){ return '"' + String(v || '').replace(/"/g, '""') + '"'; }
+  var lines = [['customer_id','property','city','outstanding_eur','max_days_overdue','fee_count','last_payment_date','risk_tier'].join(',')];
+  custRows.forEach(function(c) {
+    lines.push([
+      q(c.customer_id), q(c.property), q(c.city),
+      c.outstanding.toFixed(2),
+      c.maxOverdueDays,
+      c.feeCount,
+      c.lastPaidDate ? c.lastPaidDate.toISOString().slice(0,10) : '',
+      c.tier
+    ].join(','));
+  });
+
+  var blob = new Blob(['﻿' + lines.join('\r\n')], {type:'text/csv;charset=utf-8'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'cr-risk-export-' + new Date().toISOString().slice(0,10) + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 60000);
+}
+
+/* Wrap Prompt 3's cr_dataReady to add polish features */
+var _cr_p3_dataReady = cr_dataReady;
+cr_dataReady = function() {
+  try { _cr_p3_dataReady(); } catch(e) { console.error('[CR P3 dataReady]', e); }
+  cr_checkFreshness();
+  cr_setupFadeIn();
 };
 </script>
 </body>

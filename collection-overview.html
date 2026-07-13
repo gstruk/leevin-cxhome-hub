@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Collection Overview 2026 — Leevin Home</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080b14;--surface:rgba(14,17,28,0.72);--surface2:rgba(20,24,38,0.88);
+  --border:rgba(255,255,255,0.07);--text:#e8e8e8;--muted:#6b7280;
+  --accent:#ec4899;
+  --green:#22c55e;--orange:#f97316;--blue:#3b82f6;
+  --teal:#14b8a6;--purple:#a855f7;--yellow:#eab308;
+}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden;}
+#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;}
+header,main,footer{position:relative;z-index:1;}
+
+header{background:rgba(10,12,20,0.88);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,0.06);padding:0 24px;height:62px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;}
+.header-brand{display:flex;align-items:center;gap:12px;}
+.header-icon{width:34px;height:34px;background:rgba(236,72,153,0.1);border:1px solid rgba(236,72,153,0.25);border-radius:9px;display:flex;align-items:center;justify-content:center;color:var(--accent);}
+.header-icon svg{width:18px;height:18px;}
+.header-brand-text strong{font-size:0.92rem;font-weight:700;letter-spacing:-0.01em;color:var(--text);display:block;}
+.header-brand-text small{font-size:0.68rem;color:var(--muted);}
+.header-right{display:flex;align-items:center;gap:10px;}
+.user-email{font-size:0.72rem;color:var(--muted);}
+.back-btn,.auth-btn{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:0.78rem;font-weight:500;text-decoration:none;padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:transparent;cursor:pointer;transition:color .15s,border-color .15s;font-family:inherit;}
+.back-btn:hover{color:var(--text);border-color:rgba(236,72,153,0.4);}
+.auth-btn:hover{color:var(--text);border-color:rgba(255,255,255,0.2);}
+
+main{flex:1;padding:28px 24px 48px;}
+.dashboard{max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:20px;}
+
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+@media(max-width:900px){.kpi-row{grid-template-columns:repeat(2,1fr);}}
+.kpi-card{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:18px 20px;}
+.kpi-label{font-size:0.68rem;color:var(--muted);font-weight:600;letter-spacing:0.05em;text-transform:uppercase;margin-bottom:10px;}
+.kpi-value{font-size:1.7rem;font-weight:800;letter-spacing:-0.03em;line-height:1;}
+.kpi-sub{font-size:0.74rem;color:var(--muted);margin-top:7px;}
+.kpi-total .kpi-value{color:var(--text);}
+.kpi-collected .kpi-value{color:var(--green);}
+.kpi-risk .kpi-value{color:var(--accent);}
+.kpi-cancelled .kpi-value{color:var(--muted);}
+
+.card{background:var(--surface2);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);gap:12px;flex-wrap:wrap;row-gap:8px;}
+.card-title{font-size:0.88rem;font-weight:700;letter-spacing:-0.01em;}
+
+.tab-bar{display:flex;gap:3px;background:rgba(0,0,0,0.3);border-radius:8px;padding:3px;}
+.tab{padding:5px 11px;border-radius:6px;border:none;background:transparent;color:var(--muted);font-size:0.74rem;font-weight:500;cursor:pointer;transition:all .15s;font-family:inherit;}
+.tab.active{background:rgba(236,72,153,0.15);color:var(--accent);box-shadow:0 0 0 1px rgba(236,72,153,0.3);}
+.tab:not(.active):hover{color:var(--text);}
+
+.updated-badge{font-size:0.7rem;color:var(--muted);}
+
+.chart-wrap{padding:20px;height:300px;}
+.chart-legend{display:flex;flex-wrap:wrap;gap:6px 16px;padding:0 20px 16px;justify-content:center;}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:0.71rem;color:var(--muted);}
+.legend-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
+
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+table{width:100%;border-collapse:collapse;font-size:0.79rem;min-width:860px;}
+th{padding:10px 12px;text-align:right;font-size:0.67rem;font-weight:600;color:var(--muted);letter-spacing:0.05em;text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap;}
+th:first-child{text-align:left;}
+td{padding:9px 12px;text-align:right;border-bottom:1px solid rgba(255,255,255,0.04);color:var(--text);}
+td:first-child{text-align:left;font-weight:600;}
+tr:last-child td{border-bottom:none;}
+tr:hover:not(.total-row) td{background:rgba(255,255,255,0.018);}
+.total-row td{font-weight:700;background:rgba(236,72,153,0.04);border-top:1px solid rgba(236,72,153,0.13);}
+.cell-count{font-size:0.67rem;color:var(--muted);margin-right:3px;}
+.st-green{color:var(--green);}
+.st-pink{color:var(--accent);}
+.st-orange{color:var(--orange);}
+.st-gray{color:var(--muted);}
+.st-purple{color:var(--purple);}
+.st-blue{color:var(--blue);}
+.st-teal{color:var(--teal);}
+.rate-cell{font-weight:700;}
+.rate-good{color:var(--green);}
+.rate-ok{color:var(--yellow);}
+.rate-low{color:var(--accent);}
+
+.risk-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:16px 20px;}
+@media(max-width:700px){.risk-grid{grid-template-columns:repeat(2,1fr);}}
+.risk-card{border-radius:12px;border:1px solid;padding:16px 18px;}
+.risk-tier{font-size:1.2rem;font-weight:800;letter-spacing:-0.02em;margin-bottom:2px;}
+.risk-tier-label{font-size:0.67rem;color:var(--muted);margin-bottom:12px;}
+.risk-amount{font-size:1.05rem;font-weight:700;margin-bottom:2px;}
+.risk-count{font-size:0.71rem;color:var(--muted);}
+.risk-link-btn{font-size:0.74rem;font-weight:600;color:var(--accent);text-decoration:none;padding:5px 12px;border:1px solid rgba(236,72,153,0.3);border-radius:7px;transition:background .15s;white-space:nowrap;}
+.risk-link-btn:hover{background:rgba(236,72,153,0.1);}
+.risk-note{font-size:0.72rem;color:var(--muted);padding:0 20px 16px;line-height:1.55;}
+
+.no-data-wrap{text-align:center;padding:80px 20px;max-width:440px;margin:0 auto;}
+.no-data-icon{width:64px;height:64px;background:rgba(236,72,153,0.08);border:1px solid rgba(236,72,153,0.2);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;color:var(--accent);}
+.no-data-wrap h2{font-size:1.2rem;font-weight:700;margin-bottom:10px;}
+.no-data-wrap p{color:var(--muted);font-size:0.84rem;line-height:1.6;}
+.no-data-wrap code{background:rgba(255,255,255,0.08);padding:2px 7px;border-radius:4px;font-size:0.8rem;}
+
+footer{text-align:center;padding:18px;color:var(--muted);font-size:0.73rem;border-top:1px solid var(--border);}
+</style>
+</head>
+<body>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  const firebaseConfig = {
+    apiKey:            "AIzaSyD3c_JWbEtLQ2eMlSWAJTxPILN67XkjwTk",
+    authDomain:        "leevin-cxhome-hub.firebaseapp.com",
+    projectId:         "leevin-cxhome-hub",
+    storageBucket:     "leevin-cxhome-hub.firebasestorage.app",
+    messagingSenderId: "502783167107",
+    appId:             "1:502783167107:web:8a86641b6ef897bd0ca9b6"
+  };
+  const MANAGERS = new Set([
+    'g.struk@leevinhome.com',
+    'eduardo@leevingroup.com',
+    'p.coppini@leevinhome.com',
+    'lais.ribeiro@leevingroup.com',
+    'l.lacerda@leevinhome.com',
+    'j.yoo@leevingroup.com',
+  ]);
+  const auth = getAuth(initializeApp(firebaseConfig));
+  document.documentElement.style.visibility = 'hidden';
+  onAuthStateChanged(auth, user => {
+    if (!user) { window.location.replace('/leevin-cxhome-hub/login.html'); return; }
+    if (!MANAGERS.has(user.email)) { window.location.replace('/leevin-cxhome-hub/'); return; }
+    document.documentElement.style.visibility = '';
+    const el = document.getElementById('user-email');
+    if (el) el.textContent = user.email;
+  });
+  window.doSignOut = () => signOut(auth).then(() =>
+    window.location.replace('/leevin-cxhome-hub/login.html')
+  );
+</script>
+
+<canvas id="bg-canvas"></canvas>
+
+<header>
+  <div class="header-brand">
+    <div class="header-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+    </div>
+    <div class="header-brand-text">
+      <strong>Leevin-CXHome-Hub</strong>
+      <small>Collection Overview 2026</small>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="user-email" id="user-email"></span>
+    <a class="back-btn" href="https://gstruk.github.io/leevin-cxhome-hub/leevin-managers.html">&#8592; Managers</a>
+    <button class="auth-btn" onclick="doSignOut()">Sign out</button>
+  </div>
+</header>
+
+<main>
+  <div id="no-data-msg" style="display:none">
+    <div class="no-data-wrap">
+      <div class="no-data-icon">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      </div>
+      <h2>No data yet</h2>
+      <p>Run <code>update_collection_overview.py</code> with a BeeMyRoom billing export to populate this dashboard.</p>
+    </div>
+  </div>
+
+  <div id="dashboard" class="dashboard" style="display:none">
+
+    <div class="kpi-row">
+      <div class="kpi-card kpi-total">
+        <div class="kpi-label">Total Billed 2026</div>
+        <div class="kpi-value" id="kv-total">—</div>
+        <div class="kpi-sub" id="ks-total">—</div>
+      </div>
+      <div class="kpi-card kpi-collected">
+        <div class="kpi-label">Collected</div>
+        <div class="kpi-value" id="kv-collected">—</div>
+        <div class="kpi-sub" id="ks-collected">—</div>
+      </div>
+      <div class="kpi-card kpi-risk">
+        <div class="kpi-label">Outstanding / Overdue</div>
+        <div class="kpi-value" id="kv-risk">—</div>
+        <div class="kpi-sub" id="ks-risk">—</div>
+      </div>
+      <div class="kpi-card kpi-cancelled">
+        <div class="kpi-label">Cancelled</div>
+        <div class="kpi-value" id="kv-cancelled">—</div>
+        <div class="kpi-sub" id="ks-cancelled">—</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Monthly Billing vs Collection</h2>
+        <div class="tab-bar" id="cat-tabs">
+          <button class="tab active" onclick="switchCat(this,'all')">All</button>
+          <button class="tab" onclick="switchCat(this,'fees')">Room &amp; Fees</button>
+          <button class="tab" onclick="switchCat(this,'deposits')">Deposits</button>
+          <button class="tab" onclick="switchCat(this,'other')">Other</button>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="monthly-chart"></canvas></div>
+      <div class="chart-legend" id="chart-legend"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Month-by-Month Detail</h2>
+        <span class="updated-badge" id="updated-badge"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align:left">Month</th>
+              <th>Bills</th>
+              <th>Total Billed</th>
+              <th class="st-green">Fully Paid</th>
+              <th class="st-pink">Overdue</th>
+              <th class="st-orange">Outstanding</th>
+              <th class="st-gray">Cancelled</th>
+              <th class="st-purple">Refunded</th>
+              <th class="st-blue">To Refund</th>
+              <th class="st-teal">Overpaid</th>
+              <th>Rate</th>
+            </tr>
+          </thead>
+          <tbody id="monthly-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Risk Spotlight</h2>
+        <a class="risk-link-btn" href="https://gstruk.github.io/leevin-cxhome-hub/collection-risk.html">Full Risk Dashboard &#8599;</a>
+      </div>
+      <div class="risk-grid" id="risk-grid"></div>
+      <p class="risk-note">Overdue &amp; outstanding balance bills only, classified by days past due date. See full risk dashboard for resident-level detail.</p>
+    </div>
+
+  </div>
+</main>
+
+<footer>Leevin Home &mdash; Collection Overview <span id="ov-year">2026</span> &mdash; <span id="ov-updated"></span></footer>
+
+<script>
+var OVERVIEW_DATA = {"generated": "13 Jul 2026 · 15:49", "year": 2026, "months": [{"month": "2026-01", "label": "Jan 2026", "categories": {"fees": {"fully paid": {"count": 2346, "total": 1531544.64, "paid": 1531544.64, "remaining": 0.0}, "cancelled": {"count": 103, "total": 80793.95, "paid": 823.75, "remaining": 79970.2}}, "deposits": {"fully paid": {"count": 440, "total": 280183.3, "paid": 280183.3, "remaining": 0.0}, "cancelled": {"count": 15, "total": 9899.0, "paid": 0.0, "remaining": 9899.0}, "refunded": {"count": 2, "total": 520.0, "paid": 520.0, "remaining": 0.0}}, "other": {"cancelled": {"count": 2624, "total": 1557931.03, "paid": 0.0, "remaining": 1557931.03}, "fully paid": {"count": 306, "total": 12708.52, "paid": 12708.52, "remaining": 0.0}}, "refunds": {"refunded": {"count": 562, "total": -272806.6, "paid": -272806.6, "remaining": 0.0}}}}, {"month": "2026-02", "label": "Feb 2026", "categories": {"fees": {"fully paid": {"count": 2404, "total": 1525682.97, "paid": 1525682.97, "remaining": 0.0}, "cancelled": {"count": 126, "total": 81468.15, "paid": 1183.32, "remaining": 80284.83}}, "deposits": {"fully paid": {"count": 592, "total": 368354.62, "paid": 368354.62, "remaining": 0.0}, "cancelled": {"count": 35, "total": 21950.86, "paid": 0.0, "remaining": 21950.86}}, "other": {"cancelled": {"count": 2686, "total": 1377669.84, "paid": 0.0, "remaining": 1377669.84}, "fully paid": {"count": 421, "total": 15860.97, "paid": 15860.97, "remaining": 0.0}, "overdue": {"count": 1, "total": 33.33, "paid": 0.0, "remaining": 33.33}}, "refunds": {"refunded": {"count": 643, "total": -299892.74, "paid": -299892.74, "remaining": 0.0}}}}, {"month": "2026-03", "label": "Mar 2026", "categories": {"fees": {"fully paid": {"count": 2583, "total": 1610402.92, "paid": 1610402.92, "remaining": 0.0}, "cancelled": {"count": 164, "total": 96146.91, "paid": 0.0, "remaining": 96146.91}, "overdue": {"count": 1, "total": 258.0, "paid": 0.0, "remaining": 258.0}}, "deposits": {"fully paid": {"count": 646, "total": 396077.36, "paid": 396077.36, "remaining": 0.0}, "cancelled": {"count": 27, "total": 19030.0, "paid": 2037.5, "remaining": 16992.5}, "outstanding balance": {"count": 1, "total": 475.0, "paid": 400.0, "remaining": 75.0}}, "other": {"cancelled": {"count": 2506, "total": 993654.05, "paid": 36.0, "remaining": 993618.05}, "fully paid": {"count": 566, "total": 22717.42, "paid": 22717.42, "remaining": 0.0}, "overdue": {"count": 19, "total": 1089.5, "paid": 0.0, "remaining": 1089.5}, "outstanding balance": {"count": 1, "total": 60.0, "paid": 20.0, "remaining": 40.0}}, "refunds": {"refunded": {"count": 961, "total": -419982.21, "paid": -419982.21, "remaining": 0.0}, "to be refunded": {"count": 1, "total": -30.0, "paid": 0.0, "remaining": -30.0}}}}, {"month": "2026-04", "label": "Apr 2026", "categories": {"fees": {"fully paid": {"count": 2357, "total": 1513572.82, "paid": 1513572.82, "remaining": 0.0}, "cancelled": {"count": 112, "total": 71042.6, "paid": 24.95, "remaining": 71017.65}, "overdue": {"count": 1, "total": 575.0, "paid": 0.0, "remaining": 575.0}, "outstanding balance": {"count": 2, "total": 1195.0, "paid": 444.83, "remaining": 750.17}}, "deposits": {"fully paid": {"count": 450, "total": 273679.21, "paid": 273679.21, "remaining": 0.0}, "cancelled": {"count": 2, "total": 1630.0, "paid": 1550.0, "remaining": 80.0}}, "other": {"cancelled": {"count": 1892, "total": 870423.75, "paid": 26.0, "remaining": 870397.75}, "fully paid": {"count": 481, "total": 17135.74, "paid": 17135.74, "remaining": 0.0}, "overdue": {"count": 50, "total": 2551.73, "paid": 0.0, "remaining": 2551.73}, "outstanding balance": {"count": 5, "total": 352.04, "paid": 138.65, "remaining": 213.39}}, "refunds": {"refunded": {"count": 799, "total": -332329.39, "paid": -332329.39, "remaining": 0.0}, "to be refunded": {"count": 2, "total": 9.95, "paid": 0.0, "remaining": 9.95}}}}, {"month": "2026-05", "label": "May 2026", "categories": {"fees": {"fully paid": {"count": 2307, "total": 1496027.39, "paid": 1496027.39, "remaining": 0.0}, "outstanding balance": {"count": 17, "total": 10668.99, "paid": 7156.44, "remaining": 3512.55}, "cancelled": {"count": 88, "total": 56971.57, "paid": 0.0, "remaining": 56971.57}, "overpaid": {"count": 34, "total": 16212.43, "paid": 27490.08, "remaining": -11277.65}, "overdue": {"count": 13, "total": 6178.63, "paid": 0.0, "remaining": 6178.63}}, "deposits": {"fully paid": {"count": 506, "total": 310297.51, "paid": 310297.51, "remaining": 0.0}, "overpaid": {"count": 3, "total": 1680.0, "paid": 2727.51, "remaining": -1047.51}, "overdue": {"count": 1, "total": 540.0, "paid": 0.0, "remaining": 540.0}, "outstanding balance": {"count": 1, "total": 585.0, "paid": 525.0, "remaining": 60.0}}, "other": {"cancelled": {"count": 1922, "total": 863822.32, "paid": -2439.0, "remaining": 866261.32}, "fully paid": {"count": 496, "total": 17970.58, "paid": 17970.58, "remaining": 0.0}, "overdue": {"count": 86, "total": 3027.28, "paid": 0.0, "remaining": 3027.28}, "outstanding balance": {"count": 3, "total": 120.11, "paid": 59.25, "remaining": 60.86}, "overpaid": {"count": 4, "total": -67.86, "paid": 711.74, "remaining": -779.6}}, "refunds": {"refunded": {"count": 651, "total": -290838.49, "paid": -290838.49, "remaining": 0.0}, "to be refunded": {"count": 17, "total": -1989.38, "paid": 0.0, "remaining": -1989.38}}}}, {"month": "2026-06", "label": "Jun 2026", "categories": {"fees": {"fully paid": {"count": 2289, "total": 1472640.03, "paid": 1472640.03, "remaining": 0.0}, "cancelled": {"count": 231, "total": 150355.59, "paid": 4191.78, "remaining": 146163.81}, "overpaid": {"count": 21, "total": 8969.9, "paid": 16497.01, "remaining": -7527.11}, "outstanding balance": {"count": 33, "total": 21748.21, "paid": 12672.58, "remaining": 9075.63}, "overdue": {"count": 106, "total": 57814.9, "paid": 0.0, "remaining": 57814.9}}, "deposits": {"fully paid": {"count": 361, "total": 208024.34, "paid": 208024.34, "remaining": 0.0}, "overpaid": {"count": 4, "total": 1775.0, "paid": 3450.0, "remaining": -1675.0}, "overdue": {"count": 2, "total": 1122.5, "paid": 0.0, "remaining": 1122.5}, "cancelled": {"count": 36, "total": 25080.0, "paid": 6000.0, "remaining": 19080.0}, "outstanding balance": {"count": 2, "total": 1140.0, "paid": 1075.0, "remaining": 65.0}}, "other": {"cancelled": {"count": 1301, "total": 733012.48, "paid": 64.4, "remaining": 732948.08}, "overdue": {"count": 116, "total": 4480.91, "paid": 0.0, "remaining": 4480.91}, "fully paid": {"count": 301, "total": 9609.19, "paid": 9609.19, "remaining": 0.0}, "overpaid": {"count": 6, "total": 172.5, "paid": 5264.26, "remaining": -5091.76}, "outstanding balance": {"count": 6, "total": 330.2, "paid": 285.02, "remaining": 45.18}}, "refunds": {"refunded": {"count": 394, "total": -143206.9, "paid": -143206.9, "remaining": 0.0}, "to be refunded": {"count": 44, "total": -867.6, "paid": 0.0, "remaining": -867.6}}}}, {"month": "2026-07", "label": "Jul 2026", "categories": {"fees": {"fully paid": {"count": 591, "total": 372419.99, "paid": 372419.99, "remaining": 0.0}, "outstanding balance": {"count": 19, "total": 13754.0, "paid": 11650.19, "remaining": 2103.81}, "overdue": {"count": 77, "total": 44170.7, "paid": 0.0, "remaining": 44170.7}, "cancelled": {"count": 124, "total": 86094.39, "paid": 0.0, "remaining": 86094.39}}, "deposits": {"overdue": {"count": 8, "total": 3553.34, "paid": 0.0, "remaining": 3553.34}, "outstanding balance": {"count": 5, "total": 2970.0, "paid": 2334.24, "remaining": 635.76}, "fully paid": {"count": 129, "total": 77332.5, "paid": 77332.5, "remaining": 0.0}, "cancelled": {"count": 3, "total": 2300.0, "paid": 0.0, "remaining": 2300.0}}, "other": {"cancelled": {"count": 383, "total": 205961.73, "paid": 0.0, "remaining": 205961.73}, "fully paid": {"count": 84, "total": 2208.06, "paid": 2208.06, "remaining": 0.0}, "overdue": {"count": 127, "total": 4330.25, "paid": 0.0, "remaining": 4330.25}, "outstanding balance": {"count": 7, "total": 181.0, "paid": 101.44, "remaining": 79.56}}, "refunds": {"refunded": {"count": 241, "total": -49839.07, "paid": -49839.07, "remaining": 0.0}, "to be refunded": {"count": 17, "total": -2305.81, "paid": 0.0, "remaining": -2305.81}, "cancelled": {"count": 1, "total": -600.0, "paid": 0.0, "remaining": -600.0}}}}], "by_status": {"fully paid": {"count": 20656, "total": 11534450.08, "paid": 11534450.08, "remaining": 0.0}, "cancelled": {"count": 14381, "total": 7304638.22, "paid": 13498.7, "remaining": 7291139.52}, "refunded": {"count": 4253, "total": -1808375.4, "paid": -1808375.4, "remaining": 0.0}, "overdue": {"count": 608, "total": 129726.07, "paid": 0.0, "remaining": 129726.07}, "outstanding balance": {"count": 102, "total": 53579.55, "paid": 36862.64, "remaining": 16716.91}, "to be refunded": {"count": 81, "total": -5182.84, "paid": 0.0, "remaining": -5182.84}, "overpaid": {"count": 72, "total": 28741.97, "paid": 56140.6, "remaining": -27398.63}}, "totals": {"count": 40153, "total": 17237577.65, "paid": 9832576.62, "remaining": 7405001.03}, "risk": {"A15+": {"count": 433, "total": 99882.15, "paid": 19818.52, "remaining": 80063.63}, "A": {"count": 126, "total": 48330.68, "paid": 12906.7, "remaining": 35423.98}, "B": {"count": 91, "total": 20781.47, "paid": 4098.98, "remaining": 16682.49}, "C": {"count": 59, "total": 14311.32, "paid": 38.44, "remaining": 14272.88}}};
+var OVERVIEW_UPDATED = '13 Jul 2026 · 15:49';
+var currentCat = 'all';
+var chart = null;
+var CATS = ['fees','deposits','other','refunds'];
+
+var RISK_CFG = {
+  'A15+':{ bg:'rgba(236,72,153,0.10)',  border:'rgba(236,72,153,0.35)', color:'#ec4899', label:'>14 days overdue' },
+  'A':   { bg:'rgba(249,115,22,0.10)',  border:'rgba(249,115,22,0.35)', color:'#f97316', label:'8–14 days overdue' },
+  'B':   { bg:'rgba(234,179,8,0.10)',   border:'rgba(234,179,8,0.35)',  color:'#eab308', label:'4–7 days overdue' },
+  'C':   { bg:'rgba(34,197,94,0.10)',   border:'rgba(34,197,94,0.35)',  color:'#22c55e', label:'1–3 days overdue' }
+};
+
+function euro(n) {
+  if (!n) return '€0';
+  var a = Math.abs(n);
+  if (a >= 1e6) return '€' + (n/1e6).toFixed(1) + 'M';
+  if (a >= 1000) return '€' + (n/1000).toFixed(1) + 'k';
+  return '€' + Math.round(n).toLocaleString('en-IE');
+}
+function euroFull(n) {
+  return '€' + (n||0).toLocaleString('en-IE',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function pct(a,b) { return b ? (a/b*100).toFixed(1) : '0.0'; }
+
+function getStatusAgg(m, cat, status, field) {
+  var cats = cat === 'all' ? CATS : [cat];
+  var sum = 0;
+  for (var i=0; i<cats.length; i++) {
+    var s = ((m.categories||{})[cats[i]]||{})[status];
+    if (s) sum += s[field]||0;
+  }
+  return sum;
+}
+function getMonthField(m, cat, field) {
+  var cats = cat === 'all' ? CATS : [cat];
+  var sum = 0;
+  for (var i=0; i<cats.length; i++) {
+    var catD = (m.categories||{})[cats[i]]||{};
+    var ks = Object.keys(catD);
+    for (var j=0; j<ks.length; j++) sum += catD[ks[j]][field]||0;
+  }
+  return sum;
+}
+
+function renderKPIs(data) {
+  var bs = data.by_status||{}, t = data.totals||{};
+  var billed = t.total||0, paid = t.paid||0, count = t.count||0;
+  var atRisk = ((bs.overdue||{}).remaining||0) + ((bs['outstanding balance']||{}).remaining||0);
+  var atRiskN = ((bs.overdue||{}).count||0) + ((bs['outstanding balance']||{}).count||0);
+  var canc = (bs.cancelled||{}).total||0, cancN = (bs.cancelled||{}).count||0;
+  var rate = pct(paid, billed);
+  document.getElementById('kv-total').textContent = euro(billed);
+  document.getElementById('ks-total').textContent = count.toLocaleString('en-IE') + ' bills';
+  document.getElementById('kv-collected').textContent = euro(paid);
+  document.getElementById('ks-collected').textContent = rate + '% collection rate';
+  document.getElementById('kv-risk').textContent = euro(atRisk);
+  document.getElementById('ks-risk').textContent = atRiskN + ' bills at risk';
+  document.getElementById('kv-cancelled').textContent = euro(canc);
+  document.getElementById('ks-cancelled').textContent = cancN.toLocaleString('en-IE') + ' bills';
+}
+
+function renderChart(data, cat) {
+  var months = data.months||[];
+  var labels = months.map(function(m){ return m.label.replace(' 2026',''); });
+  var datasets = [
+    {
+      label:'Total Billed',
+      data: months.map(function(m){ return getMonthField(m,cat,'total'); }),
+      backgroundColor:'rgba(107,114,128,0.3)', borderColor:'rgba(107,114,128,0.55)', borderWidth:1
+    },
+    {
+      label:'Collected',
+      data: months.map(function(m){ return getMonthField(m,cat,'paid'); }),
+      backgroundColor:'rgba(34,197,94,0.5)', borderColor:'#22c55e', borderWidth:1
+    },
+    {
+      label:'Overdue / Outstanding',
+      data: months.map(function(m){
+        return getStatusAgg(m,cat,'overdue','remaining') + getStatusAgg(m,cat,'outstanding balance','remaining');
+      }),
+      backgroundColor:'rgba(236,72,153,0.6)', borderColor:'#ec4899', borderWidth:1
+    },
+    {
+      label:'To Refund / Overpaid',
+      data: months.map(function(m){
+        return getStatusAgg(m,cat,'to be refunded','remaining') + getStatusAgg(m,cat,'overpaid','remaining');
+      }),
+      backgroundColor:'rgba(59,130,246,0.45)', borderColor:'#3b82f6', borderWidth:1
+    },
+    {
+      label:'Cancelled',
+      data: months.map(function(m){ return getStatusAgg(m,cat,'cancelled','total'); }),
+      backgroundColor:'rgba(107,114,128,0.18)', borderColor:'rgba(107,114,128,0.38)', borderWidth:1
+    }
+  ].filter(function(ds){ return ds.data.some(function(v){ return v>0; }); });
+
+  var ctx = document.getElementById('monthly-chart').getContext('2d');
+  if (chart) {
+    chart.data.labels = labels;
+    chart.data.datasets = datasets;
+    chart.update('none');
+  } else {
+    chart = new Chart(ctx, {
+      type:'bar',
+      data:{ labels:labels, datasets:datasets },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{
+          legend:{ display:false },
+          tooltip:{
+            backgroundColor:'rgba(10,12,20,0.92)',
+            borderColor:'rgba(255,255,255,0.08)', borderWidth:1,
+            titleColor:'#e8e8e8', bodyColor:'#9ca3af',
+            callbacks:{ label:function(c){ return '  '+c.dataset.label+': '+euroFull(c.parsed.y); } }
+          }
+        },
+        scales:{
+          x:{ grid:{ color:'rgba(255,255,255,0.04)' }, ticks:{ color:'#6b7280', font:{ size:11 } } },
+          y:{ grid:{ color:'rgba(255,255,255,0.04)' }, ticks:{ color:'#6b7280', font:{ size:11 }, callback:function(v){ return euro(v); } } }
+        }
+      }
+    });
+  }
+  document.getElementById('chart-legend').innerHTML = datasets.map(function(ds){
+    return '<span class="legend-item"><span class="legend-dot" style="background:'+ds.borderColor+'"></span>'+ds.label+'</span>';
+  }).join('');
+}
+
+function renderTable(data, cat) {
+  var months = data.months||[];
+  var acc = {n:0,tot:0,pd:0,fp_n:0,fp_t:0,ov_n:0,ov_r:0,ob_n:0,ob_r:0,cn_n:0,cn_t:0,rf_n:0,rf_t:0,tr_n:0,tr_r:0,op_n:0,op_r:0};
+  function cell(n,v,cls){ return n ? '<td class="'+cls+'"><span class="cell-count">'+n+'</span>'+euro(v)+'</td>' : '<td class="'+cls+'" style="opacity:.28">—</td>'; }
+  var html = '';
+  for (var i=0; i<months.length; i++) {
+    var m=months[i];
+    var n=getMonthField(m,cat,'count'), tot=getMonthField(m,cat,'total'), pd=getMonthField(m,cat,'paid');
+    var fp_n=getStatusAgg(m,cat,'fully paid','count'),            fp_t=getStatusAgg(m,cat,'fully paid','total');
+    var ov_n=getStatusAgg(m,cat,'overdue','count'),               ov_r=getStatusAgg(m,cat,'overdue','remaining');
+    var ob_n=getStatusAgg(m,cat,'outstanding balance','count'),   ob_r=getStatusAgg(m,cat,'outstanding balance','remaining');
+    var cn_n=getStatusAgg(m,cat,'cancelled','count'),             cn_t=getStatusAgg(m,cat,'cancelled','total');
+    var rf_n=getStatusAgg(m,cat,'refunded','count'),              rf_t=getStatusAgg(m,cat,'refunded','total');
+    var tr_n=getStatusAgg(m,cat,'to be refunded','count'),        tr_r=getStatusAgg(m,cat,'to be refunded','remaining');
+    var op_n=getStatusAgg(m,cat,'overpaid','count'),              op_r=getStatusAgg(m,cat,'overpaid','remaining');
+    acc.n+=n; acc.tot+=tot; acc.pd+=pd;
+    acc.fp_n+=fp_n; acc.fp_t+=fp_t; acc.ov_n+=ov_n; acc.ov_r+=ov_r;
+    acc.ob_n+=ob_n; acc.ob_r+=ob_r; acc.cn_n+=cn_n; acc.cn_t+=cn_t;
+    acc.rf_n+=rf_n; acc.rf_t+=rf_t; acc.tr_n+=tr_n; acc.tr_r+=tr_r;
+    acc.op_n+=op_n; acc.op_r+=op_r;
+    var r=pct(pd,tot), rc=parseFloat(r)>=90?'rate-good':parseFloat(r)>=70?'rate-ok':'rate-low';
+    html+='<tr><td>'+m.label.replace(' 2026','')+'</td><td>'+n+'</td><td>'+euro(tot)+'</td>'+
+      cell(fp_n,fp_t,'st-green')+cell(ov_n,ov_r,'st-pink')+cell(ob_n,ob_r,'st-orange')+
+      cell(cn_n,cn_t,'st-gray')+cell(rf_n,rf_t,'st-purple')+cell(tr_n,tr_r,'st-blue')+cell(op_n,op_r,'st-teal')+
+      '<td class="rate-cell '+rc+'">'+r+'%</td></tr>';
+  }
+  var tr=pct(acc.pd,acc.tot), trc=parseFloat(tr)>=90?'rate-good':parseFloat(tr)>=70?'rate-ok':'rate-low';
+  html+='<tr class="total-row"><td>Total 2026</td><td>'+acc.n+'</td><td>'+euro(acc.tot)+'</td>'+
+    cell(acc.fp_n,acc.fp_t,'st-green')+cell(acc.ov_n,acc.ov_r,'st-pink')+cell(acc.ob_n,acc.ob_r,'st-orange')+
+    cell(acc.cn_n,acc.cn_t,'st-gray')+cell(acc.rf_n,acc.rf_t,'st-purple')+cell(acc.tr_n,acc.tr_r,'st-blue')+cell(acc.op_n,acc.op_r,'st-teal')+
+    '<td class="rate-cell '+trc+'">'+tr+'%</td></tr>';
+  document.getElementById('monthly-tbody').innerHTML = html;
+}
+
+function renderRisk(data) {
+  var risk = data.risk||{}, html='';
+  var tiers=['A15+','A','B','C'];
+  for (var i=0; i<tiers.length; i++) {
+    var tier=tiers[i], d=risk[tier]||{count:0,remaining:0}, cfg=RISK_CFG[tier];
+    html+='<div class="risk-card" style="background:'+cfg.bg+';border-color:'+cfg.border+'">'+
+      '<div class="risk-tier" style="color:'+cfg.color+'">'+tier+'</div>'+
+      '<div class="risk-tier-label">'+cfg.label+'</div>'+
+      '<div class="risk-amount" style="color:'+cfg.color+'">'+euroFull(d.remaining)+'</div>'+
+      '<div class="risk-count">'+(d.count||0)+' bills</div></div>';
+  }
+  document.getElementById('risk-grid').innerHTML = html;
+}
+
+function renderDashboard(data) {
+  renderKPIs(data);
+  renderChart(data,'all');
+  renderTable(data,'all');
+  renderRisk(data);
+  document.getElementById('updated-badge').textContent = 'Updated '+data.generated;
+  document.getElementById('ov-updated').textContent = 'Updated '+data.generated;
+  document.getElementById('ov-year').textContent = data.year||2026;
+  document.getElementById('dashboard').style.display = '';
+}
+
+window.switchCat = function(btn, cat) {
+  document.querySelectorAll('#cat-tabs .tab').forEach(function(t){ t.classList.remove('active'); });
+  btn.classList.add('active');
+  currentCat = cat;
+  if (OVERVIEW_DATA) { renderChart(OVERVIEW_DATA,cat); renderTable(OVERVIEW_DATA,cat); }
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+  if (!OVERVIEW_DATA) { document.getElementById('no-data-msg').style.display=''; return; }
+  renderDashboard(OVERVIEW_DATA);
+});
+</script>
+
+<script>
+(function(){
+  var cv=document.getElementById('bg-canvas'),ctx=cv.getContext('2d');
+  var N=32,DIST=200,SPD=0.28,W,H,nodes,t=0;
+  var PAL=[[236,72,153],[244,114,182],[251,113,133],[217,70,239],[168,85,247]];
+  function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight;}
+  function mk(){var c=PAL[Math.floor(Math.random()*PAL.length)];return{x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*SPD,vy:(Math.random()-.5)*SPD,r:Math.random()*2.2+1,color:c,phase:Math.random()*Math.PI*2};}
+  function frame(){
+    ctx.clearRect(0,0,W,H);t+=0.016;
+    for(var i=0;i<N;i++)for(var j=i+1;j<N;j++){
+      var dx=nodes[i].x-nodes[j].x,dy=nodes[i].y-nodes[j].y,d=Math.sqrt(dx*dx+dy*dy);
+      if(d<DIST){var a=(1-d/DIST)*0.1,c1=nodes[i].color,c2=nodes[j].color;
+        ctx.strokeStyle='rgba('+((c1[0]+c2[0])>>1)+','+((c1[1]+c2[1])>>1)+','+((c1[2]+c2[2])>>1)+','+a+')';
+        ctx.lineWidth=0.8;ctx.beginPath();ctx.moveTo(nodes[i].x,nodes[i].y);ctx.lineTo(nodes[j].x,nodes[j].y);ctx.stroke();}
+    }
+    for(var k=0;k<N;k++){
+      var n=nodes[k],p=1+0.3*Math.sin(t+n.phase),r2=n.color[0],g2=n.color[1],b2=n.color[2];
+      var gR=n.r*p*4,gr=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,gR);
+      gr.addColorStop(0,'rgba('+r2+','+g2+','+b2+',0.5)');
+      gr.addColorStop(0.4,'rgba('+r2+','+g2+','+b2+',0.15)');
+      gr.addColorStop(1,'rgba('+r2+','+g2+','+b2+',0)');
+      ctx.beginPath();ctx.arc(n.x,n.y,gR,0,Math.PI*2);ctx.fillStyle=gr;ctx.fill();
+      ctx.beginPath();ctx.arc(n.x,n.y,n.r*p*0.8,0,Math.PI*2);
+      ctx.fillStyle='rgba('+r2+','+g2+','+b2+',0.9)';
+      ctx.shadowColor='rgba('+r2+','+g2+','+b2+',0.8)';ctx.shadowBlur=8;ctx.fill();ctx.shadowBlur=0;
+      n.x+=n.vx;n.y+=n.vy;
+      if(n.x<0||n.x>W)n.vx*=-1;if(n.y<0||n.y>H)n.vy*=-1;
+    }
+    requestAnimationFrame(frame);
+  }
+  window.addEventListener('resize',resize);resize();
+  nodes=Array.from({length:N},mk);frame();
+})();
+</script>
+
+</body>
+</html>
